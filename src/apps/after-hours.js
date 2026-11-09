@@ -14,7 +14,7 @@ const ALIASES = { SMS: 'SMS', WHATSAPP: 'WhatsApp', EMAIL: 'Email', FB: 'FB', FA
 
 const fields = [
   { key: 'enabled', type: 'bool', label: 'Auto-reply is on', default: true },
-  { key: 'timezone', type: 'timezone', label: 'Time zone', default: '', help: 'Empty = the sub-account’s time zone. Example: America/New_York' },
+  { key: 'timezone', type: 'timezone', label: 'Time zone', default: '', help: 'Empty = your account’s time zone. Example: America/New_York' },
   { key: 'hours', type: 'hours', label: 'Business hours', default: defaultHours(), help: 'Messages outside these hours get the reply. A day that is off is closed all day.' },
   { key: 'holidays', type: 'dates', label: 'Closed dates (YYYY-MM-DD, one per line)', default: [] },
   { key: 'channels', type: 'multiselect', label: 'Reply on', default: ['SMS', 'WhatsApp', 'FB', 'IG', 'GMB', 'Live_Chat'], options: CHANNELS },
@@ -92,6 +92,17 @@ module.exports = {
   ],
   scopes: ['contacts.readonly', 'contacts.write', 'conversations.readonly', 'conversations.write', 'conversations/message.readonly', 'conversations/message.write', 'locations.readonly'],
   webhookEvents: ['InboundMessage'],
+  privacy: {
+    reads: 'inbound message events (channel and contact, not the message text), the contact\u2019s name, tags and DND status, and your account\u2019s time zone',
+    writes: 'one auto-reply on the same channel and an optional tag on the contact',
+    stores: 'your hours, holidays and reply text, and a cooldown marker per contact so they get one reply per cooldown'
+  },
+  faq: [
+    ['A lead didn\u2019t get the reply.', 'They may have written during business hours, already had a reply within the cooldown, have DND on, carry your opt-out tag, or used a channel that is switched off.'],
+    ['Which time zone is used?', 'Your account\u2019s time zone, unless you enter another one in the settings.'],
+    ['Why is Email off by default?', 'Auto-replying to email can loop with other auto-responders. Turn it on if you want it.'],
+    ['Can I close for a holiday?', 'Add the date (YYYY-MM-DD) under "Closed dates". The reply will say the next day you are open.']
+  ],
   fields,
   onEvent,
   _test: { nextOpen, closedNow, DAYS }

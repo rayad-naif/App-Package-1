@@ -78,7 +78,7 @@ function createSuite(cfg, deps) {
     if (inst && inst.installed && inst.tokens) return inst;
     if (companyId && await store.getCompany(def.slug, companyId)) {
       inst = await def.oauth.installFromCompany(companyId, locationId).catch(() => null);
-      if (inst) await store.log(def.slug, locationId, 'installed', 'via agency bulk install');
+      if (inst) await store.log(def.slug, locationId, 'installed', 'via bulk install');
     }
     return inst && inst.installed ? inst : null;
   }
@@ -202,8 +202,11 @@ function createSuite(cfg, deps) {
   };
   app.get('/:slug', appParam, (req, res) => html(res, views.landing(req.def)));
   app.get('/:slug/docs', appParam, (req, res) => html(res, views.docs(req.def)));
+  app.get('/:slug/support', appParam, (req, res) => html(res, views.support(req.def)));
+  app.get('/:slug/privacy', appParam, (req, res) => html(res, views.privacy(req.def)));
+  app.get('/:slug/terms', appParam, (req, res) => html(res, views.terms(req.def)));
   app.get('/:slug/install', appParam, (req, res) => {
-    if (!req.def.ready) return html(res, views.message(req.def, 'Not available yet', 'This app is not connected to HighLevel yet. Please try again later.'), 503);
+    if (!req.def.ready) return html(res, views.message(req.def, 'Not available yet', 'This app is not available for installs yet. Please try again later.'), 503);
     const state = randomToken(16);
     res.cookie('suite_state', sec.sign({ state, app: req.def.slug, exp: Date.now() + 15 * 60e3 }), { httpOnly: true, sameSite: 'lax', secure, maxAge: 15 * 60e3, path: '/' });
     res.redirect(req.def.oauth.authorizeUrl(state));
@@ -211,7 +214,7 @@ function createSuite(cfg, deps) {
   app.get('/:slug/oauth/callback', appParam, ah(async (req, res) => {
     const def = req.def;
     const code = typeof req.query.code === 'string' ? req.query.code : '';
-    if (!code) return html(res, views.message(def, 'Install failed', String(req.query.error_description || req.query.error || 'HighLevel did not return an authorization code.')), 400);
+    if (!code) return html(res, views.message(def, 'Install failed', String(req.query.error_description || req.query.error || 'Your CRM did not return an authorization code.')), 400);
     // Marketplace-initiated installs carry no state; ones started at /install must match.
     if (req.query.state) {
       const st = sec.unsign(cookies(req).suite_state);
@@ -221,12 +224,12 @@ function createSuite(cfg, deps) {
     try {
       const r = await def.oauth.exchangeCode(code);
       for (const i of r.installs) await store.log(def.slug, i.locationId, 'installed', i.name || '');
-      if (r.company) await store.log(def.slug, null, 'installed_agency', 'company ' + r.company.companyId + ', ' + r.installs.length + ' sub-accounts');
+      if (r.company) await store.log(def.slug, null, 'installed_agency', 'company ' + r.company.companyId + ', ' + r.installs.length + ' accounts');
       html(res, views.installed(def, r));
     } catch (e) {
       console.error('[' + def.slug + '] oauth: ' + e.message);
       await store.log(def.slug, null, 'oauth_error', e.message).catch(() => null);
-      html(res, views.message(def, 'Install failed', 'HighLevel refused the install (' + (e.status || 'error') + '). Please try again, or contact support.'), 502);
+      html(res, views.message(def, 'Install failed', 'Your CRM refused the install (' + (e.status || 'error') + '). Please try again, or contact support.'), 502);
     }
   }));
 
@@ -239,11 +242,11 @@ function createSuite(cfg, deps) {
     if (!limit('sso:' + ip(req))) return res.status(429).json({ error: 'Too many requests. Wait a minute.' });
     if (!def.creds.ssoKey) return res.status(501).json({ error: 'Sign-in is not configured for this app yet (' + def.envPrefix + '_SSO_KEY).' });
     const u = decryptGhlSso(req.body && req.body.payload, def.creds.ssoKey);
-    if (!u) return res.status(401).json({ error: 'HighLevel did not send a valid sign-in. Reload the page.' });
+    if (!u) return res.status(401).json({ error: 'Your CRM did not send a valid sign-in. Reload the page.' });
     const loc = typeof u.activeLocation === 'string' ? u.activeLocation : '';
-    if (!loc) return res.status(400).json({ error: 'Open this app from inside a sub-account.' });
+    if (!loc) return res.status(400).json({ error: 'Open this app from inside one of your accounts.' });
     const inst = await installFor(def, loc, typeof u.companyId === 'string' ? u.companyId : null);
-    if (!inst) return res.status(404).json({ error: def.name + ' is not installed in this sub-account yet.', install: cfg.baseUrl + '/' + def.slug + '/install' });
+    if (!inst) return res.status(404).json({ error: def.name + ' is not installed in this account yet.', install: cfg.baseUrl + '/' + def.slug + '/install' });
     const edit = String(u.role || '').toLowerCase() === 'admin';
     res.json({ token: sec.sign({ t: 'emb', app: def.slug, loc, uid: String(u.userId || ''), edit, exp: Date.now() + EMBED_TTL }), edit });
   }));
@@ -253,7 +256,7 @@ function createSuite(cfg, deps) {
     const s = sec.unsign((req.get('Authorization') || '').replace(/^Bearer\s+/i, ''));
     if (!s || s.t !== 'emb' || s.app !== req.def.slug) return res.status(401).json({ error: 'Your session expired. Reload the page.' });
     const inst = await store.getInstall(req.def.slug, s.loc);
-    if (!inst || !inst.installed) return res.status(404).json({ error: 'The app is not installed in this sub-account.' });
+    if (!inst || !inst.installed) return res.status(404).json({ error: 'The app is not installed in this account.' });
     if (!limit('api:' + s.loc)) return res.status(429).json({ error: 'Too many requests. Wait a minute.' });
     req.sess = s; req.inst = inst;
     next();

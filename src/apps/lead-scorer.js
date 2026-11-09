@@ -122,6 +122,17 @@ module.exports = {
   ],
   scopes: ['contacts.readonly', 'contacts.write', 'locations.readonly', 'locations/customFields.readonly', 'locations/customFields.write'],
   webhookEvents: ['ContactCreate', 'ContactDelete', 'InboundMessage', 'AppointmentCreate', 'OpportunityCreate', 'OpportunityStatusUpdate'],
+  privacy: {
+    reads: 'new and deleted contacts, inbound message events (type only, not the text), appointment and opportunity events, and your account\u2019s custom fields',
+    writes: 'a "Lead Score" custom field (created once), the score on each contact, and the cold / warm / hot tags',
+    stores: 'each contact\u2019s score and tier by contact ID, and a per-day count of message points'
+  },
+  faq: [
+    ['Where do I see the score?', 'On every contact, in the "Lead Score" custom field. You can filter Smart Lists by it or by the lead-cold / lead-warm / lead-hot tags.'],
+    ['Does it score my existing contacts?', 'Scores start from the moment you install. Existing contacts begin at 0 and gain points as they reply, book or buy.'],
+    ['Can I reset a score?', 'Delete and recreate the contact, or ask support to reset one account\u2019s scores.'],
+    ['The tags aren\u2019t changing.', 'Check that the tier tags are not empty in the settings and that "Scoring is on" is ticked. Recent activity at the bottom of the app page shows every score change.']
+  ],
   fields,
   onEvent,
   _test: { tierOf }

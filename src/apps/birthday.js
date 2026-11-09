@@ -13,7 +13,7 @@ const fields = [
   { key: 'email_subject', type: 'text', max: 150, label: 'Email subject', default: 'Happy birthday, {{first_name}}! 🎂' },
   { key: 'tag', type: 'tag', label: 'Tag for the day', default: 'birthday-today', help: 'Added on the birthday and removed the next day. Trigger a coupon workflow from it.' },
   { key: 'skip_tags', type: 'tags', label: 'Skip contacts with any of these tags', default: ['no-birthday', 'customer-lost'] },
-  { key: 'timezone', type: 'timezone', label: 'Time zone', default: '', help: 'Empty = the sub-account’s time zone. Messages go out once a day around 15:00 UTC.' }
+  { key: 'timezone', type: 'timezone', label: 'Time zone', default: '', help: 'Empty = your account’s time zone. Messages go out once a day around 15:00 UTC.' }
 ];
 
 /* "1990-05-17", "1990-05-17T00:00:00.000Z", "05/17/1990", epoch ms -> "05-17" */
@@ -130,7 +130,7 @@ module.exports = {
   icon: '🎂',
   color: '#f759ab',
   tagline: 'A personal birthday message for every contact, every year.',
-  description: 'Sends each contact a personal birthday SMS and/or email on the day, in your sub-account’s time zone, and tags them for 24 hours so your workflows can add a coupon or a call task. Set it once, delight customers forever.',
+  description: 'Sends each contact a personal birthday SMS and/or email on the day, in your account’s time zone, and tags them for 24 hours so your workflows can add a coupon or a call task. Set it once, delight customers forever.',
   features: [
     ['Automatic every day', 'Runs daily in your time zone. Leap-day birthdays are greeted on Feb 28.'],
     ['SMS, email or both', 'Personal merge fields: first name, business name, even their new age.'],
@@ -139,6 +139,17 @@ module.exports = {
   ],
   scopes: ['contacts.readonly', 'contacts.write', 'conversations.readonly', 'conversations.write', 'conversations/message.readonly', 'conversations/message.write', 'locations.readonly'],
   webhookEvents: ['ContactCreate', 'ContactUpdate', 'ContactDelete'],
+  privacy: {
+    reads: 'contact create / update / delete events and the contact\u2019s first name, phone, email, date of birth and tags',
+    writes: 'one birthday SMS and/or email per contact per year, and the one-day birthday tag',
+    stores: 'the birthday (month and day only) of each contact by contact ID, and a marker of who was greeted today'
+  },
+  faq: [
+    ['When do messages go out?', 'Once a day, around 15:00 UTC, to contacts whose birthday is today in your account\u2019s time zone.'],
+    ['My existing contacts aren\u2019t greeted.', 'Click "Import birthdays of existing contacts" in the app. Contacts created or edited after install are picked up automatically.'],
+    ['Where does the birthday come from?', 'The contact\u2019s standard Date of Birth field.'],
+    ['How do I send a coupon?', 'Create a workflow with the trigger "Contact Tag added: birthday-today" and send your offer from it.']
+  ],
   fields,
   onEvent,
   daily,
