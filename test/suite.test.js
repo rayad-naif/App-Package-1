@@ -4,7 +4,10 @@ const assert = require('node:assert');
 const crypto = require('crypto');
 const config = require('../src/config');
 const { createSuite } = require('../src/suite');
-const { createMemoryStore } = require('../src/store');
+const { createMemoryStore, createRedisStore } = require('../src/store');
+const { fakeUpstash } = require('./fake-upstash');
+// TEST_STORE=redis runs every test against the Upstash REST store (and without SESSION_SECRET).
+const REDIS = process.env.TEST_STORE === 'redis';
 const { encryptGhlSso } = require('../src/security');
 const { localParts, isOpen, makeSanitizer } = require('../src/schema');
 const scorer = require('../src/apps/lead-scorer');
@@ -13,7 +16,8 @@ const cleaner = require('../src/apps/contact-cleaner');
 const after = require('../src/apps/after-hours');
 const bday = require('../src/apps/birthday');
 
-const PREFIXES = ['LEAD_SCORER', 'ROUND_ROBIN', 'CONTACT_CLEANER', 'AFTER_HOURS', 'BIRTHDAY_GREETER'];
+const PREFIXES = ['LEAD_SCORER', 'ROUND_ROBIN', 'CONTACT_CLEANER', 'AFTER_HOURS', 'BIRTHDAY_GREETER', 'INTENT_RADAR'];
+const SLUGS = ['lead-scorer', 'round-robin', 'contact-cleaner', 'after-hours', 'birthday-greeter', 'intent-radar'];
 const LOC = 'loc_ABC123', COMPANY = 'comp_XYZ789';
 
 /* A fake HighLevel API. Records every call; routes return JSON. */
@@ -63,12 +67,12 @@ function fakeGhl(over) {
 }
 
 function setup(extraEnv, fakeOver) {
-  const env = { SESSION_SECRET: 's'.repeat(40), ADMIN_PASSWORD: 'admin-password', CRON_SECRET: 'cron', BASE_URL: 'http://suite.test' };
+  const env = { SESSION_SECRET: REDIS ? '' : 's'.repeat(40), ADMIN_PASSWORD: 'admin-password', CRON_SECRET: 'cron', BASE_URL: 'http://suite.test' };
   for (const p of PREFIXES) Object.assign(env, { [p + '_CLIENT_ID']: 'app' + p + '-x1', [p + '_CLIENT_SECRET']: 'sec', [p + '_SSO_KEY']: 'sso-' + p });
   Object.assign(env, extraEnv || {});
   const cfg = config.load(env);
   const g = fakeGhl(fakeOver);
-  const store = createMemoryStore();
+  const store = REDIS ? createRedisStore('https://fake-upstash.test', 'test-token', fakeUpstash().fetch) : createMemoryStore();
   const app = createSuite(cfg, { store, fetch: g.fetch });
   const server = app.listen(0);
   const base = 'http://127.0.0.1:' + server.address().port;
@@ -81,7 +85,7 @@ function setup(extraEnv, fakeOver) {
   const install = (slug) => req('GET', '/' + slug + '/oauth/callback?code=abc');
   let n = 0;
   const hook = (slug, evt) => req('POST', '/' + slug + '/webhook', Object.assign({ locationId: LOC, webhookId: 'w' + (++n) }, evt));
-  const sso = async (slug, role) => (await req('POST', '/' + slug + '/api/sso', { payload: encryptGhlSso({ userId: 'usr1', companyId: COMPANY, role: role || 'admin', type: 'account', activeLocation: LOC }, 'sso-' + PREFIXES[['lead-scorer', 'round-robin', 'contact-cleaner', 'after-hours', 'birthday-greeter'].indexOf(slug)]) })).json;
+  const sso = async (slug, role) => (await req('POST', '/' + slug + '/api/sso', { payload: encryptGhlSso({ userId: 'usr1', companyId: COMPANY, role: role || 'admin', type: 'account', activeLocation: LOC }, 'sso-' + PREFIXES[SLUGS.indexOf(slug)]) })).json;
   return { cfg, g, store, app, req, install, hook, sso, close: () => server.close() };
 }
 
@@ -345,4 +349,46 @@ test('lead tiers helper', () => {
   assert.strictEqual(scorer._test.tierOf(0, s), 'cold');
   assert.strictEqual(scorer._test.tierOf(25, s), 'warm');
   assert.strictEqual(scorer._test.tierOf(60, s), 'hot');
+});
+
+test('Intent Radar: detection rules', () => {
+  const ir = require('../src/apps/intent-radar');
+  const s = makeSanitizer(ir.fields)({ competitors: 'Acme Dental', custom_words: 'buying: approved for financing\nnonsense: x' });
+  const ids = (m) => ir._test.detect(m, s).map((f) => f.id);
+  assert.deepStrictEqual(ids('How much does whitening cost?'), ['pricing']);
+  assert.deepStrictEqual(ids('STOP'), ['optout']);
+  assert.deepStrictEqual(ids('Stop texting me, this is a scam'), ['optout', 'complaint']);
+  assert.deepStrictEqual(ids('I want to cancel, switching to Acme Dental'), ['cancel', 'competitor']);
+  assert.deepStrictEqual(ids('Ready to get started, send me the invoice'), ['buying']);
+  assert.deepStrictEqual(ids('Good news, I got approved for financing!'), ['buying', 'pricing']);
+  assert.deepStrictEqual(ids('Can I book for tomorrow? It is urgent'), ['booking', 'urgent']);
+  assert.deepStrictEqual(ids('I saw your ad on facebook, thanks'), []);
+  // Email replies: only the new text counts, not the quoted thread.
+  assert.deepStrictEqual(ids('<p>Sounds good</p>\nOn Mon, Jan 5, 2026 Bob wrote:\n> what is the price?'), []);
+  assert.deepStrictEqual(ids('hello'), []);
+});
+
+test('Intent Radar: tags, note and owner task once per cooldown', async () => {
+  const t = setup();
+  try {
+    await t.install('intent-radar');
+    t.g.state.contacts.c1 = { id: 'c1', firstName: 'Ann', assignedTo: 'u7', tags: [] };
+    const msg = { type: 'InboundMessage', contactId: 'c1', messageType: 'SMS', direction: 'inbound', body: 'This is unacceptable, I want a refund and to cancel' };
+    await t.hook('intent-radar', msg);
+    await t.hook('intent-radar', msg); // same intent again within the cooldown
+    const tags = t.g.find('POST', /c1\/tags/).map((c) => c.body.tags);
+    assert.deepStrictEqual(tags, [['intent-complaint', 'intent-churn-risk'], ['intent-complaint', 'intent-churn-risk']]);
+    const notes = t.g.find('POST', /c1\/notes/);
+    assert.strictEqual(notes.length, 1);
+    assert.match(notes[0].body.body, /Unhappy \/ complaint \("unacceptable"\).*Churn risk \("cancel"\)/);
+    const tasks = t.g.find('POST', /c1\/tasks/);
+    assert.strictEqual(tasks.length, 1);
+    assert.strictEqual(tasks[0].body.assignedTo, 'u7');
+    assert.match(tasks[0].body.title, /unhappy \/ complaint, churn risk/);
+    // Outbound and neutral messages do nothing.
+    const before = t.g.calls.length;
+    await t.hook('intent-radar', Object.assign({}, msg, { direction: 'outbound' }));
+    await t.hook('intent-radar', Object.assign({}, msg, { body: 'thanks, see you then' }));
+    assert.strictEqual(t.g.calls.length, before);
+  } finally { t.close(); }
 });

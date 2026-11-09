@@ -36,6 +36,9 @@ function load(envIn) {
     serverless: !!env.VERCEL,
     mongoUri: env.MONGODB_URI || '',
     mongoDb: env.MONGODB_DB || 'GhlAppSuite',
+    // Upstash Redis from the Vercel Marketplace sets KV_REST_API_*; Upstash directly sets UPSTASH_REDIS_REST_*.
+    redisUrl: env.KV_REST_API_URL || env.UPSTASH_REDIS_REST_URL || '',
+    redisToken: env.KV_REST_API_TOKEN || env.UPSTASH_REDIS_REST_TOKEN || '',
     sessionSecret: env.SESSION_SECRET || '',
     adminPassword: env.ADMIN_PASSWORD || '',
     cronSecret: env.CRON_SECRET || '',
@@ -60,9 +63,10 @@ function load(envIn) {
 
 function validate(cfg) {
   const problems = [];
-  if (!cfg.sessionSecret || cfg.sessionSecret.length < 32) problems.push('SESSION_SECRET must be at least 32 characters');
+  // SESSION_SECRET is optional: without it a random secret is generated once and kept in the database.
+  if (cfg.sessionSecret && cfg.sessionSecret.length < 32) problems.push('SESSION_SECRET must be at least 32 characters (or leave it unset)');
   if (!cfg.adminPassword || cfg.adminPassword.length < 10) problems.push('ADMIN_PASSWORD must be at least 10 characters');
-  if (cfg.serverless && !cfg.mongoUri) problems.push('MONGODB_URI is required on Vercel (its filesystem is not persistent)');
+  if (cfg.serverless && !cfg.mongoUri && !(cfg.redisUrl && cfg.redisToken)) problems.push('A database is required on Vercel: add "Upstash for Redis" from the Vercel Marketplace (Storage tab), or set MONGODB_URI');
   return problems;
 }
 
