@@ -96,7 +96,7 @@ function createViews(cfg, apps) {
   function home() {
     const cards = apps.map((d) => '<div class="card">' + icon(d) + '<h2 style="margin-bottom:4px">' + esc(d.name) + '</h2><p class="note" style="margin:0 0 10px">' + esc(d.tagline) + '</p>' +
       '<p style="font-size:14px">' + esc(d.description) + '</p><p><b>' + esc(brand.price) + '</b></p><a class="btn pri" href="/' + d.slug + '">Learn more</a></div>').join('');
-    return page('Apps for your CRM', '<div class="hero"><span class="badge">App Marketplace</span><h1>Five automations every CRM account needs</h1>' +
+    return page('Apps for your CRM', '<div class="hero"><span class="badge">App Marketplace</span><h1>' + ['Zero','One','Two','Three','Four','Five','Six','Seven','Eight','Nine','Ten'][apps.length] + ' automations every CRM account needs</h1>' +
       '<p class="sub">Install from your CRM\u2019s app marketplace, open the app in your account, done. No Zapier, no workflow spaghetti.</p></div><div class="grid">' + cards + '</div>');
   }
 

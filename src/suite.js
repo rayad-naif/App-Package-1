@@ -26,7 +26,20 @@ const ah = (fn) => (req, res, next) => Promise.resolve(fn(req, res, next)).catch
 function createSuite(cfg, deps) {
   deps = deps || {};
   const store = deps.store || createStore(cfg);
-  const sec = createSecurity(cfg.sessionSecret);
+  // SESSION_SECRET if set; otherwise a random secret generated once and kept in the database.
+  let secImpl = cfg.sessionSecret ? createSecurity(cfg.sessionSecret) : null;
+  let ready = secImpl ? Promise.resolve() : null;
+  const ensureReady = () => {
+    if (!ready) {
+      ready = store.ensureSecret(randomToken(32)).then((s) => { secImpl = createSecurity(s); })
+        .catch((e) => { ready = null; throw e; });
+    }
+    return ready;
+  };
+  const sec = {
+    sign: (o) => secImpl.sign(o), unsign: (t) => secImpl.unsign(t),
+    encrypt: (p) => secImpl.encrypt(p), decrypt: (b) => secImpl.decrypt(b)
+  };
   const ghl = createGhl(cfg, store, sec, deps.fetch);
 
   const apps = APP_DEFS.map((d) => {
@@ -82,6 +95,8 @@ function createSuite(cfg, deps) {
     }
     return inst && inst.installed ? inst : null;
   }
+
+  app.use(ah(async (req, res, next) => { if (req.path !== '/health') await ensureReady(); next(); }));
 
   /* ---------- webhooks (raw body: needed for signature checks) ---------- */
   app.post('/:slug/webhook', express.raw({ type: '*/*', limit: '512kb' }), ah(async (req, res) => {
@@ -143,6 +158,7 @@ function createSuite(cfg, deps) {
 
   /* ---------- daily job (Vercel Cron, once a day on the free plan) ---------- */
   async function runDaily() {
+    await ensureReady();
     const deadline = Date.now() + DAILY_BUDGET_MS;
     const report = {};
     for (const def of apps.filter((a) => a.daily)) {
