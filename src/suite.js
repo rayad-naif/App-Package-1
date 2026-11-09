@@ -202,6 +202,9 @@ function createSuite(cfg, deps) {
   };
   app.get('/:slug', appParam, (req, res) => html(res, views.landing(req.def)));
   app.get('/:slug/docs', appParam, (req, res) => html(res, views.docs(req.def)));
+  app.get('/:slug/support', appParam, (req, res) => html(res, views.support(req.def)));
+  app.get('/:slug/privacy', appParam, (req, res) => html(res, views.privacy(req.def)));
+  app.get('/:slug/terms', appParam, (req, res) => html(res, views.terms(req.def)));
   app.get('/:slug/install', appParam, (req, res) => {
     if (!req.def.ready) return html(res, views.message(req.def, 'Not available yet', 'This app is not connected to HighLevel yet. Please try again later.'), 503);
     const state = randomToken(16);

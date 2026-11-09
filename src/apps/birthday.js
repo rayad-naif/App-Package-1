@@ -139,6 +139,17 @@ module.exports = {
   ],
   scopes: ['contacts.readonly', 'contacts.write', 'conversations.readonly', 'conversations.write', 'conversations/message.readonly', 'conversations/message.write', 'locations.readonly'],
   webhookEvents: ['ContactCreate', 'ContactUpdate', 'ContactDelete'],
+  privacy: {
+    reads: 'contact create / update / delete events and the contact\u2019s first name, phone, email, date of birth and tags',
+    writes: 'one birthday SMS and/or email per contact per year, and the one-day birthday tag',
+    stores: 'the birthday (month and day only) of each contact by contact ID, and a marker of who was greeted today'
+  },
+  faq: [
+    ['When do messages go out?', 'Once a day, around 15:00 UTC, to contacts whose birthday is today in your sub-account\u2019s time zone.'],
+    ['My existing contacts aren\u2019t greeted.', 'Click "Import birthdays of existing contacts" in the app. Contacts created or edited after install are picked up automatically.'],
+    ['Where does the birthday come from?', 'The contact\u2019s standard Date of Birth field.'],
+    ['How do I send a coupon?', 'Create a workflow with the trigger "Contact Tag added: birthday-today" and send your offer from it.']
+  ],
   fields,
   onEvent,
   daily,

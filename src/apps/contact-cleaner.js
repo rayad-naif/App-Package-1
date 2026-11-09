@@ -137,6 +137,17 @@ module.exports = {
   ],
   scopes: ['contacts.readonly', 'contacts.write', 'locations.readonly'],
   webhookEvents: ['ContactCreate'],
+  privacy: {
+    reads: 'each new contact\u2019s name, email, phone and tags, and whether another contact shares the email or phone',
+    writes: 'the corrected name, email and phone on the new contact, plus the duplicate / junk tags and an explaining note',
+    stores: 'nothing about your contacts; only your settings and the activity log'
+  },
+  faq: [
+    ['Will it change my existing contacts?', 'No. Only contacts created after you install are cleaned.'],
+    ['A name I typed on purpose was changed.', 'Names with intentional mixed case (McDonald, DeShawn) are kept. All-caps or all-lowercase names are proper-cased; turn off "Proper-case names" to stop that.'],
+    ['Phone numbers got the wrong country code.', 'Set "Default country" to the country most of your leads are in. Numbers that already start with + are never changed.'],
+    ['Does it merge duplicates?', 'No. It tags them and adds a note linking the original so you decide what to merge.']
+  ],
   fields,
   onEvent,
   _test: { properCase, e164, junkReasons }

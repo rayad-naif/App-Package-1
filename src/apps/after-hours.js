@@ -92,6 +92,17 @@ module.exports = {
   ],
   scopes: ['contacts.readonly', 'contacts.write', 'conversations.readonly', 'conversations.write', 'conversations/message.readonly', 'conversations/message.write', 'locations.readonly'],
   webhookEvents: ['InboundMessage'],
+  privacy: {
+    reads: 'inbound message events (channel and contact, not the message text), the contact\u2019s name, tags and DND status, and the sub-account\u2019s time zone',
+    writes: 'one auto-reply on the same channel and an optional tag on the contact',
+    stores: 'your hours, holidays and reply text, and a cooldown marker per contact so they get one reply per cooldown'
+  },
+  faq: [
+    ['A lead didn\u2019t get the reply.', 'They may have written during business hours, already had a reply within the cooldown, have DND on, carry your opt-out tag, or used a channel that is switched off.'],
+    ['Which time zone is used?', 'The sub-account\u2019s time zone, unless you enter another one in the settings.'],
+    ['Why is Email off by default?', 'Auto-replying to email can loop with other auto-responders. Turn it on if you want it.'],
+    ['Can I close for a holiday?', 'Add the date (YYYY-MM-DD) under "Closed dates". The reply will say the next day you are open.']
+  ],
   fields,
   onEvent,
   _test: { nextOpen, closedNow, DAYS }

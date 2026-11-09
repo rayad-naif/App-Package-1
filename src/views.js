@@ -76,10 +76,13 @@ function createViews(cfg, apps) {
     o = o || {};
     const accent = o.def ? '<style>:root{--accent:' + esc(o.def.color) + ';--soft:' + esc(o.def.color) + '1a}</style>' : '';
     const nav = o.bare ? '' : '<nav>' + (o.def
-      ? '<a href="/' + o.def.slug + '">Overview</a><a href="/' + o.def.slug + '/docs">Docs</a><a href="/">All apps</a><a href="mailto:' + esc(brand.supportEmail) + '">Support</a>'
+      ? ['', '/docs', '/support'].map((x, i) => '<a href="/' + o.def.slug + x + '">' + ['Home', 'Docs', 'Support'][i] + '</a>').join('')
       : '<a href="/">Apps</a><a href="/privacy">Privacy</a><a href="/terms">Terms</a><a href="mailto:' + esc(brand.supportEmail) + '">Support</a>') + '</nav>';
-    const foot = o.bare ? '' : '<footer><div class="in"><div><b>' + esc(brand.name) + '</b> &middot; Apps for HighLevel<br>Support: <a href="mailto:' + esc(brand.supportEmail) + '">' + esc(brand.supportEmail) + '</a></div>' +
-      '<div><a href="/">All apps</a><a href="/privacy">Privacy Policy</a><a href="/terms">Terms of Service</a></div></div></footer>';
+    const p = o.def ? '/' + o.def.slug : '';
+    const foot = o.bare ? '' : '<footer><div class="in"><div><b>' + esc(o.def ? o.def.name : brand.name) + '</b>' + (o.def ? ' by ' + esc(brand.name) : ' &middot; Apps for HighLevel') +
+      '<br>Support: <a href="mailto:' + esc(brand.supportEmail) + '">' + esc(brand.supportEmail) + '</a></div>' +
+      '<div>' + (o.def ? '<a href="' + p + '">Home</a><a href="' + p + '/docs">Docs</a><a href="' + p + '/support">Support</a>' : '<a href="/">All apps</a>') +
+      '<a href="' + p + '/privacy">Privacy Policy</a><a href="' + p + '/terms">Terms of Service</a></div></div></footer>';
     return '<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">' +
       '<title>' + esc(title) + ' | ' + esc(brand.name) + '</title><meta name="description" content="' + esc(o.description || brand.name + ' - apps for HighLevel') + '">' +
       '<style>' + CSS + '</style>' + accent + '</head><body>' +
@@ -101,7 +104,7 @@ function createViews(cfg, apps) {
     const feats = d.features.map((f) => '<div class="card feat"><h3 style="margin-top:0">' + esc(f[0]) + '</h3><p>' + esc(f[1]) + '</p></div>').join('');
     return page(d.name, '<div class="hero">' + icon(d) + '<h1>' + esc(d.tagline) + '</h1><p class="sub">' + esc(d.description) + '</p>' +
       '<div style="display:flex;gap:12px;align-items:center;flex-wrap:wrap"><span class="price">' + esc(brand.price) + '</span>' + installBtn(d) +
-      '<a class="btn" href="/' + d.slug + '/docs">How it works</a></div></div><div class="grid" style="margin-top:26px">' + feats + '</div>' +
+      '<a class="btn" href="/' + d.slug + '/docs">How it works</a><a class="btn" href="/' + d.slug + '/support">Support</a></div></div><div class="grid" style="margin-top:26px">' + feats + '</div>' +
       '<div class="card"><h2>Getting started</h2><ol class="steps"><li>Install ' + esc(d.name) + ' from the HighLevel Marketplace into your sub-account.</li>' +
       '<li>Open <b>' + esc(d.name) + '</b> from the sub-account’s left menu.</li><li>Review the settings (the defaults work out of the box) and click Save.</li></ol></div>',
     { def: d, description: d.tagline + ' ' + d.description });
@@ -113,9 +116,12 @@ function createViews(cfg, apps) {
       ['Redirect URL', d.oauth.redirectUri],
       ['Webhook URL', base + '/' + d.slug + '/webhook'],
       ['Custom page (Live URL)', base + '/' + d.slug + '/embed'],
-      ['Website / support URL', base + '/' + d.slug],
-      ['Privacy policy', base + '/privacy'],
-      ['Terms of service', base + '/terms'],
+      ['Website (home page)', base + '/' + d.slug],
+      ['Documentation', base + '/' + d.slug + '/docs'],
+      ['Support URL', base + '/' + d.slug + '/support'],
+      ['Support email', brand.supportEmail],
+      ['Privacy policy', base + '/' + d.slug + '/privacy'],
+      ['Terms of service', base + '/' + d.slug + '/terms'],
       ['Scopes', d.scopes.join(' ')],
       ['Webhook events', d.webhookEvents.join(', ')],
       ['Environment variables (Vercel)', d.envPrefix + '_CLIENT_ID, ' + d.envPrefix + '_CLIENT_SECRET, ' + d.envPrefix + '_SSO_KEY']
@@ -128,7 +134,7 @@ function createViews(cfg, apps) {
       '<h3>Settings</h3><ul>' + settings + '</ul></div>' +
       '<div class="card"><h2>Marketplace listing values</h2><p class="note">For the app owner: copy these into the HighLevel developer portal.</p><div class="scroll"><table>' +
       rows.map((r) => '<tr><th style="width:220px">' + esc(r[0]) + '</th><td><code>' + esc(r[1]) + '</code></td></tr>').join('') + '</table></div></div>' +
-      '<div class="card"><h2>Support</h2><p>Email <a href="mailto:' + esc(brand.supportEmail) + '">' + esc(brand.supportEmail) + '</a>. Uninstalling the app stops it immediately; settings are kept for 30 days in case you reinstall.</p></div></div>', { def: d });
+      '<div class="card"><h2>Need help?</h2><p>See the <a href="/' + d.slug + '/support">support page</a> for common questions, or email <a href="mailto:' + esc(brand.supportEmail) + '">' + esc(brand.supportEmail) + '</a>.</p></div></div>', { def: d });
   }
 
   function installed(d, r) {
@@ -198,27 +204,53 @@ function render(){root.innerHTML='';var j=DATA,ins=j.install,st=ins.stats||{};
     return page(d.name, '<div id="root"><div class="card"><p class="note">Signing you in…</p></div></div>', { def: d, bare: true, script });
   }
 
-  function legal(title, sections) {
-    return page(title, '<div class="prose card"><h1>' + esc(title) + '</h1><p class="note">Last updated ' + esc(brand.legalUpdated) + '. Applies to: ' +
-      esc(apps.map((a) => a.name).join(', ')) + ' (the &ldquo;Apps&rdquo;), provided by ' + esc(brand.legalName) + '.</p>' +
-      sections.map((s) => '<h3>' + esc(s[0]) + '</h3><p>' + esc(s[1]) + '</p>').join('') + '</div>');
+  /* Legal pages: d = one app (its own policy), or none (the catalog: all apps). */
+  function legal(title, d, sections) {
+    const scope = d ? esc(d.name) + ' (the &ldquo;App&rdquo;)' : esc(apps.map((a) => a.name).join(', ')) + ' (the &ldquo;Apps&rdquo;)';
+    return page((d ? d.name + ' ' : '') + title, '<div class="prose card"><h1>' + (d ? esc(d.name) + ' ' : '') + esc(title) + '</h1><p class="note">Last updated ' + esc(brand.legalUpdated) +
+      '. Applies to ' + scope + ', provided by ' + esc(brand.legalName) + '.</p>' +
+      sections.map((x) => '<h3>' + esc(x[0]) + '</h3><p>' + esc(x[1]) + '</p>').join('') + '</div>', { def: d });
   }
-  const privacy = () => legal('Privacy Policy', [
-    ['What we receive', 'When you install an App, HighLevel gives us an access token for the sub-account and sends us events (for example new contacts, inbound messages, appointments and opportunities) for the scopes you approved. The App settings page receives your HighLevel user ID and role through HighLevel single sign-on.'],
-    ['What we store', 'OAuth tokens (encrypted), the sub-account name and time zone, your App settings, small working data each App needs (lead scores, round-robin counters, reply cooldowns, birthday dates by contact ID) and a 30-day activity log. We do not store message contents or copies of your contact records.'],
-    ['How we use it', 'Only to run the App you installed: reading and updating contacts, opportunities and conversations in your sub-account as described in the App’s documentation. We never sell or share your data and never use it for advertising.'],
-    ['Where it lives', 'Our servers run on Vercel and data is stored in MongoDB Atlas, both with encryption in transit and at rest.'],
-    ['Retention and deletion', 'Uninstalling an App revokes our access immediately. Activity logs expire after 30 days. Email us to delete all data for a sub-account at any time.'],
-    ['Contact', 'Questions: ' + brand.supportEmail]
-  ]);
-  const terms = () => legal('Terms of Service', [
-    ['The service', 'Each App automates tasks inside your HighLevel sub-account. Pricing (' + brand.price + ' per App) and billing are handled by the HighLevel Marketplace.'],
-    ['Your responsibilities', 'You are responsible for the messages the Apps send on your behalf, including consent, opt-out and messaging laws (such as TCPA, CAN-SPAM and GDPR) and HighLevel’s own policies.'],
-    ['Availability', 'We aim for high availability but provide the Apps "as is", without warranties. HighLevel outages or API changes may affect the Apps.'],
-    ['Liability', 'To the extent the law allows, our total liability is limited to the fees you paid for the affected App in the previous three months.'],
-    ['Cancellation', 'Uninstall an App in HighLevel at any time; billing stops according to the Marketplace’s rules.'],
-    ['Contact', brand.supportEmail]
-  ]);
+  const its = (d) => (d ? 'the App' : 'each App');
+  function privacy(d) {
+    const p = d && d.privacy;
+    return legal('Privacy Policy', d, [
+      ['What we receive', 'When you install ' + its(d) + ', HighLevel gives us an access token for the sub-account and sends us events for the scopes you approve' +
+        (p ? ': ' + p.reads + '.' : ' (for example new contacts, inbound messages, appointments and opportunities).') +
+        ' The settings page receives your HighLevel user ID and role through HighLevel single sign-on.'],
+      ['What we change in your account', p ? 'Only this: ' + p.writes + '.' : 'Only what each App’s documentation describes: contacts, opportunities and messages in your sub-account.'],
+      ['What we store', 'OAuth tokens (encrypted), the sub-account name and time zone, your settings, ' + (p ? p.stores : 'small working data each App needs (scores, counters, cooldowns, birthday dates by contact ID)') +
+        ', and a 30-day activity log. We do not store message contents or copies of your contact records.'],
+      ['How we use it', 'Only to run ' + (d ? d.name : 'the App you installed') + '. We never sell or share your data and never use it for advertising.'],
+      ['Where it lives', 'Our servers run on Vercel and data is stored in MongoDB Atlas, both encrypted in transit and at rest.'],
+      ['Retention and deletion', 'Uninstalling revokes our access immediately. Activity logs expire after 30 days. Email us to delete all data for a sub-account at any time.'],
+      ['Contact', 'Questions: ' + brand.supportEmail]
+    ]);
+  }
+  function terms(d) {
+    return legal('Terms of Service', d, [
+      ['The service', (d ? d.name + ' ' + d.description.charAt(0).toLowerCase() + d.description.slice(1) : 'Each App automates tasks inside your HighLevel sub-account.') +
+        ' Pricing (' + brand.price + (d ? '' : ' per App') + ') and billing are handled by the HighLevel Marketplace.'],
+      ['Your responsibilities', 'You are responsible for the messages and changes ' + its(d) + ' makes on your behalf, including consent, opt-out and messaging laws (such as TCPA, CAN-SPAM and GDPR) and HighLevel’s own policies.'],
+      ['Availability', 'We aim for high availability but provide ' + its(d) + ' "as is", without warranties. HighLevel outages or API changes may affect it.'],
+      ['Liability', 'To the extent the law allows, our total liability is limited to the fees you paid for ' + (d ? 'the App' : 'the affected App') + ' in the previous three months.'],
+      ['Cancellation', 'Uninstall in HighLevel at any time; billing stops according to the Marketplace’s rules.'],
+      ['Contact', brand.supportEmail]
+    ]);
+  }
+
+  function support(d) {
+    const faq = (d.faq || []).map((q) => '<h3>' + esc(q[0]) + '</h3><p>' + esc(q[1]) + '</p>').join('');
+    return page(d.name + ' support', '<div class="prose"><h1>' + esc(d.name) + ' support</h1><p class="sub">We’re here to help. Most questions are answered below.</p>' +
+      '<div class="card"><h2>Contact us</h2><p>Email <a href="mailto:' + esc(brand.supportEmail) + '?subject=' + encodeURIComponent(d.name + ' support') + '">' + esc(brand.supportEmail) + '</a>' +
+      ' with your sub-account name and what you expected to happen. We reply within one business day.</p>' +
+      '<p class="note">Tip: the <b>Recent activity</b> list at the bottom of the app page shows every action the app took, and any error.</p></div>' +
+      '<div class="card"><h2>Common questions</h2>' + faq + '</div>' +
+      '<div class="card"><h2>Install, open, uninstall</h2><ul><li><b>Install:</b> from the HighLevel Marketplace, or <a href="/' + d.slug + '/install">install here</a>.</li>' +
+      '<li><b>Open:</b> click <b>' + esc(d.name) + '</b> in the sub-account’s left menu. Only admins can change settings.</li>' +
+      '<li><b>Uninstall:</b> remove the app in the Marketplace. It stops immediately.</li></ul>' +
+      '<p>More detail in the <a href="/' + d.slug + '/docs">documentation</a>.</p></div></div>', { def: d });
+  }
 
   function adminLogin(err) {
     return page('Admin sign in', '<div class="card" style="max-width:420px;margin:40px auto"><h1>Admin</h1>' + (err ? '<div class="flash err">' + esc(err) + '</div>' : '') +
@@ -247,7 +279,7 @@ function render(){root.innerHTML='';var j=DATA,ins=j.install,st=ins.stats||{};
 
   const notFound = () => page('Not found', '<div class="card" style="max-width:520px;margin:40px auto"><h1>Page not found</h1><a class="btn" href="/">All apps</a></div>');
 
-  return { home, landing, docs, installed, message, embed, privacy, terms, adminLogin, admin, notFound };
+  return { home, landing, docs, installed, message, embed, privacy, terms, support, adminLogin, admin, notFound };
 }
 
 module.exports = { createViews, esc };

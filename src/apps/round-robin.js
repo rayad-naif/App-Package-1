@@ -88,6 +88,17 @@ module.exports = {
   ],
   scopes: ['contacts.readonly', 'contacts.write', 'opportunities.readonly', 'opportunities.write', 'users.readonly', 'locations.readonly'],
   webhookEvents: ['ContactCreate', 'OpportunityCreate'],
+  privacy: {
+    reads: 'new contact and opportunity events, the contact\u2019s owner and tags, and the sub-account\u2019s list of users (names and emails, to show the rotation)',
+    writes: 'the assigned user on contacts and opportunities, and an optional note',
+    stores: 'your rotation weights and a counter of how many leads have been assigned'
+  },
+  faq: [
+    ['Nobody is being assigned.', 'Give at least one team member a weight above 0 and click Save. A weight of 0 means "not in the rotation".'],
+    ['How do weights work?', 'A user at 3 gets three leads for every one a user at 1 gets, spread evenly (A A B A, never A A A B).'],
+    ['Does it reassign contacts that already have an owner?', 'Not while "Skip records that already have an owner" is ticked (the default).'],
+    ['Can it work with my existing assignment workflow?', 'Yes. Turn off the workflow\u2019s assign step, or limit Round Robin to contacts with a specific tag.']
+  ],
   fields,
   onEvent,
   options: async (ctx) => ({ users: await users(ctx) }),

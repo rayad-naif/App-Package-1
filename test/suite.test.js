@@ -96,6 +96,13 @@ test('public pages render for every app', async () => {
       const d = await t.req('GET', '/' + a.slug + '/docs');
       assert.match(d.text, new RegExp('http://suite.test/' + a.slug + '/oauth/callback'));
       assert.strictEqual((await t.req('GET', '/' + a.slug + '/embed')).status, 200);
+      for (const sub of ['/support', '/privacy', '/terms']) {
+        const r = await t.req('GET', '/' + a.slug + sub);
+        assert.strictEqual(r.status, 200, a.slug + sub);
+        assert.ok(r.text.includes(a.name), a.slug + sub + ' names the app');
+        assert.ok(r.text.includes('href="/' + a.slug + '/privacy"') && r.text.includes('href="/' + a.slug + '/terms"'), a.slug + sub + ' links its own legal pages');
+      }
+      assert.match(d.text, new RegExp('http://suite.test/' + a.slug + '/privacy'));
       const i = await t.req('GET', '/' + a.slug + '/install');
       assert.strictEqual(i.status, 302);
       assert.match(i.headers.get('location'), /chooselocation.*client_id=app/);
