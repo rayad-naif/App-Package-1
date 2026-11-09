@@ -79,25 +79,25 @@ function createViews(cfg, apps) {
       ? ['', '/docs', '/support'].map((x, i) => '<a href="/' + o.def.slug + x + '">' + ['Home', 'Docs', 'Support'][i] + '</a>').join('')
       : '<a href="/">Apps</a><a href="/privacy">Privacy</a><a href="/terms">Terms</a><a href="mailto:' + esc(brand.supportEmail) + '">Support</a>') + '</nav>';
     const p = o.def ? '/' + o.def.slug : '';
-    const foot = o.bare ? '' : '<footer><div class="in"><div><b>' + esc(o.def ? o.def.name : brand.name) + '</b>' + (o.def ? ' by ' + esc(brand.name) : ' &middot; Apps for HighLevel') +
+    const foot = o.bare ? '' : '<footer><div class="in"><div><b>' + esc(o.def ? o.def.name : brand.name) + '</b>' + (o.def ? ' by ' + esc(brand.name) : ' &middot; Apps for your CRM') +
       '<br>Support: <a href="mailto:' + esc(brand.supportEmail) + '">' + esc(brand.supportEmail) + '</a></div>' +
       '<div>' + (o.def ? '<a href="' + p + '">Home</a><a href="' + p + '/docs">Docs</a><a href="' + p + '/support">Support</a>' : '<a href="/">All apps</a>') +
       '<a href="' + p + '/privacy">Privacy Policy</a><a href="' + p + '/terms">Terms of Service</a></div></div></footer>';
     return '<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">' +
-      '<title>' + esc(title) + ' | ' + esc(brand.name) + '</title><meta name="description" content="' + esc(o.description || brand.name + ' - apps for HighLevel') + '">' +
+      '<title>' + esc(title) + ' | ' + esc(brand.name) + '</title><meta name="description" content="' + esc(o.description || brand.name + ' - apps for your CRM') + '">' +
       '<style>' + CSS + '</style>' + accent + '</head><body>' +
       (o.bare ? '' : '<header class="top"><a class="brand" href="' + (o.def ? '/' + o.def.slug : '/') + '">' + (o.def ? esc(o.def.icon + ' ' + o.def.name) : esc(brand.name)) + '</a>' + nav + '</header>') +
       '<main' + (o.wide ? ' style="max-width:1200px"' : '') + '>' + body + '</main>' + foot + (o.script ? '<script>' + o.script + '</script>' : '') + '</body></html>';
   }
 
   const icon = (d) => '<div class="app-ico" style="background:' + esc(d.color) + '22">' + esc(d.icon) + '</div>';
-  const installBtn = (d, label) => '<a class="btn pri" href="/' + d.slug + '/install">' + esc(label || 'Install in HighLevel') + '</a>';
+  const installBtn = (d, label) => '<a class="btn pri" href="/' + d.slug + '/install">' + esc(label || 'Install now') + '</a>';
 
   function home() {
     const cards = apps.map((d) => '<div class="card">' + icon(d) + '<h2 style="margin-bottom:4px">' + esc(d.name) + '</h2><p class="note" style="margin:0 0 10px">' + esc(d.tagline) + '</p>' +
       '<p style="font-size:14px">' + esc(d.description) + '</p><p><b>' + esc(brand.price) + '</b></p><a class="btn pri" href="/' + d.slug + '">Learn more</a></div>').join('');
-    return page('Apps for HighLevel', '<div class="hero"><span class="badge">HighLevel Marketplace</span><h1>Five automations every sub-account needs</h1>' +
-      '<p class="sub">Install from the HighLevel Marketplace, open the app in your sub-account, done. No Zapier, no workflow spaghetti.</p></div><div class="grid">' + cards + '</div>');
+    return page('Apps for your CRM', '<div class="hero"><span class="badge">App Marketplace</span><h1>Five automations every CRM account needs</h1>' +
+      '<p class="sub">Install from your CRM\u2019s app marketplace, open the app in your account, done. No Zapier, no workflow spaghetti.</p></div><div class="grid">' + cards + '</div>');
   }
 
   function landing(d) {
@@ -105,13 +105,14 @@ function createViews(cfg, apps) {
     return page(d.name, '<div class="hero">' + icon(d) + '<h1>' + esc(d.tagline) + '</h1><p class="sub">' + esc(d.description) + '</p>' +
       '<div style="display:flex;gap:12px;align-items:center;flex-wrap:wrap"><span class="price">' + esc(brand.price) + '</span>' + installBtn(d) +
       '<a class="btn" href="/' + d.slug + '/docs">How it works</a><a class="btn" href="/' + d.slug + '/support">Support</a></div></div><div class="grid" style="margin-top:26px">' + feats + '</div>' +
-      '<div class="card"><h2>Getting started</h2><ol class="steps"><li>Install ' + esc(d.name) + ' from the HighLevel Marketplace into your sub-account.</li>' +
-      '<li>Open <b>' + esc(d.name) + '</b> from the sub-account’s left menu.</li><li>Review the settings (the defaults work out of the box) and click Save.</li></ol></div>',
+      '<div class="card"><h2>Getting started</h2><ol class="steps"><li>Install ' + esc(d.name) + ' from your CRM\u2019s app marketplace.</li>' +
+      '<li>Open <b>' + esc(d.name) + '</b> from your account’s left menu.</li><li>Review the settings (the defaults work out of the box) and click Save.</li></ol></div>',
     { def: d, description: d.tagline + ' ' + d.description });
   }
 
-  function docs(d) {
-    const rows = [
+  /* Values to paste into each HighLevel Marketplace listing (owner only: shown in /admin). */
+  function listingRows(d) {
+    return [
       ['Target user', 'Sub-account'],
       ['Redirect URL', d.oauth.redirectUri],
       ['Webhook URL', base + '/' + d.slug + '/webhook'],
@@ -126,22 +127,23 @@ function createViews(cfg, apps) {
       ['Webhook events', d.webhookEvents.join(', ')],
       ['Environment variables (Vercel)', d.envPrefix + '_CLIENT_ID, ' + d.envPrefix + '_CLIENT_SECRET, ' + d.envPrefix + '_SSO_KEY']
     ];
+  }
+
+  function docs(d) {
     const settings = d.fields.map((f) => '<li><b>' + esc(f.label) + '</b>' + (f.help ? ': ' + esc(f.help) : '') + '</li>').join('');
     return page(d.name + ' docs', '<div class="prose"><h1>' + esc(d.name) + '</h1><p class="sub">' + esc(d.description) + '</p>' +
-      '<div class="card"><h2>Using the app</h2><ol class="steps"><li>Install it from the HighLevel Marketplace (' + esc(brand.price) + ').</li>' +
-      '<li>In the sub-account, open <b>' + esc(d.name) + '</b> in the left menu. Admins can change settings; other users can view them.</li>' +
+      '<div class="card"><h2>Using the app</h2><ol class="steps"><li>Install it from your CRM\u2019s app marketplace (' + esc(brand.price) + ').</li>' +
+      '<li>In your account, open <b>' + esc(d.name) + '</b> in the left menu. Admins can change settings; other users can view them.</li>' +
       '<li>Settings save instantly and apply to the next event. Recent activity is shown at the bottom of the page.</li></ol>' +
       '<h3>Settings</h3><ul>' + settings + '</ul></div>' +
-      '<div class="card"><h2>Marketplace listing values</h2><p class="note">For the app owner: copy these into the HighLevel developer portal.</p><div class="scroll"><table>' +
-      rows.map((r) => '<tr><th style="width:220px">' + esc(r[0]) + '</th><td><code>' + esc(r[1]) + '</code></td></tr>').join('') + '</table></div></div>' +
       '<div class="card"><h2>Need help?</h2><p>See the <a href="/' + d.slug + '/support">support page</a> for common questions, or email <a href="mailto:' + esc(brand.supportEmail) + '">' + esc(brand.supportEmail) + '</a>.</p></div></div>', { def: d });
   }
 
   function installed(d, r) {
     const names = r.installs.map((i) => '<li>' + esc(i.name || i.locationId) + '</li>').join('');
     return page('Installed', '<div class="card" style="max-width:620px;margin:30px auto">' + icon(d) + '<h1>' + esc(d.name) + ' is installed</h1>' +
-      (names ? '<p>Active in:</p><ul>' + names + '</ul>' : '<p>Installed for your agency. Each sub-account is activated as soon as the app is added to it.</p>') +
-      '<p>Open <b>' + esc(d.name) + '</b> from the sub-account’s left menu to review the settings. The defaults are already running.</p>' +
+      (names ? '<p>Active in:</p><ul>' + names + '</ul>' : '<p>Installed. Each account is activated as soon as the app is added to it.</p>') +
+      '<p>Open <b>' + esc(d.name) + '</b> from your account’s left menu to review the settings. The defaults are already running.</p>' +
       '<a class="btn" href="/' + d.slug + '/docs">Read the docs</a></div>', { def: d });
   }
 
@@ -162,7 +164,7 @@ function fail(msg,link){root.innerHTML='';var c=el('div',{cls:'card'},[el('h2',{
 var done=false;
 window.addEventListener('message',function(e){var d=e.data;if(done||!d||d.message!=='REQUEST_USER_DATA_RESPONSE')return;done=true;
 fetch('/'+SLUG+'/api/sso',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({payload:d.payload})}).then(function(r){return r.json()}).then(function(j){if(!j.token)return fail(j.error||'Sign-in failed.',j.install);TOKEN=j.token;load()}).catch(function(){fail('Could not reach the server.')})});
-if(window.top===window.self){fail('Open this page from the app\\u2019s menu item inside your HighLevel sub-account.')}else{window.parent.postMessage({message:'REQUEST_USER_DATA'},'*');setTimeout(function(){if(!done)fail('HighLevel did not answer the sign-in request. Reload the page.')},10000)}
+if(window.top===window.self){fail('Open this page from the app\\u2019s menu item inside your CRM account.')}else{window.parent.postMessage({message:'REQUEST_USER_DATA'},'*');setTimeout(function(){if(!done)fail('Your CRM did not answer the sign-in request. Reload the page.')},10000)}
 function load(){api('GET','settings').then(function(j){DATA=j;render()}).catch(function(e){fail(e.message)})}
 function input(f,v){var ro=!DATA.edit,i;
  if(f.type==='bool'){i=el('input',{type:'checkbox'});i.checked=!!v;i.disabled=ro;return el('label',{cls:'switch'},[i,f.label])}
@@ -174,7 +176,7 @@ function input(f,v){var ro=!DATA.edit,i;
  else if(f.type==='dates'){i=el('textarea',{placeholder:'2026-12-25'});i.value=(v||[]).join('\\n')}
  else if(f.type==='multiselect'){i=el('div',{cls:'chips'});f.options.forEach(function(o){var c=el('input',{type:'checkbox',value:o.value});c.checked=v.indexOf(o.value)>=0;c.disabled=ro;i.appendChild(el('label',null,[c,o.label]))})}
  else if(f.type==='hours'){i=el('div',{cls:'hours'});['mon','tue','wed','thu','fri','sat','sun'].forEach(function(dy){var h=v[dy],c=el('input',{type:'checkbox','data-d':dy});c.checked=h.on;c.disabled=ro;var a=el('input',{type:'time','data-from':dy});a.value=h.from;a.disabled=ro;var b=el('input',{type:'time','data-to':dy});b.value=h.to;b.disabled=ro;i.appendChild(el('label',{cls:'switch',style:'margin:0'},[c,dy[0].toUpperCase()+dy.slice(1)]));i.appendChild(a);i.appendChild(el('span',{cls:'note',text:'to'}));i.appendChild(b)})}
- else if(f.type==='weights'){i=el('div',{cls:'users'});var us=(DATA.options&&DATA.options.users)||[];if(!us.length)i.appendChild(el('p',{cls:'note',text:DATA.optionsError?'Could not load your team: '+DATA.optionsError:'No users found in this sub-account.'}));us.forEach(function(u){var n=el('input',{type:'number',min:0,max:10,'data-u':u.id});n.value=v[u.id]||0;n.disabled=ro;i.appendChild(el('div',null,[el('b',{text:u.name}),el('div',{cls:'note',text:u.email})]));i.appendChild(n)})}
+ else if(f.type==='weights'){i=el('div',{cls:'users'});var us=(DATA.options&&DATA.options.users)||[];if(!us.length)i.appendChild(el('p',{cls:'note',text:DATA.optionsError?'Could not load your team: '+DATA.optionsError:'No users found in this account.'}));us.forEach(function(u){var n=el('input',{type:'number',min:0,max:10,'data-u':u.id});n.value=v[u.id]||0;n.disabled=ro;i.appendChild(el('div',null,[el('b',{text:u.name}),el('div',{cls:'note',text:u.email})]));i.appendChild(n)})}
  else{i=el('input',{type:'text',maxlength:f.max||200,placeholder:f.type==='timezone'?(DATA.install.timezone||'America/New_York'):''});i.value=v||''}
  if(i.tagName==='INPUT'||i.tagName==='TEXTAREA'||i.tagName==='SELECT')i.disabled=ro;
  w.appendChild(i);if(f.help)w.appendChild(el('div',{cls:'help',text:f.help}));return w}
@@ -187,7 +189,7 @@ function read(f,node){
 function render(){root.innerHTML='';var j=DATA,ins=j.install,st=ins.stats||{};
  root.appendChild(el('div',{cls:'card'},[el('h1',{text:j.app.name,style:'font-size:24px'}),el('div',{cls:'note',text:(ins.name||'')+(ins.timezone?' \\u00b7 '+ins.timezone:'')}),
   el('div',{cls:'stats',style:'margin-top:12px'},[el('div',null,[el('b',{text:String(st.events||0)}),'events received']),el('div',null,[el('b',{text:String(st.actions||0)}),'actions taken']),el('div',null,[el('b',{text:ins.lastEventAt?ins.lastEventAt.slice(0,16).replace('T',' '):'\\u2014'}),'last event (UTC)'])])]));
- if(ins.needsReauth)root.appendChild(el('div',{cls:'flash err',text:'HighLevel no longer accepts this app\\u2019s access. Reinstall the app from the Marketplace.'}));
+ if(ins.needsReauth)root.appendChild(el('div',{cls:'flash err',text:'Your CRM no longer accepts this app\\u2019s access. Reinstall the app from the app marketplace.'}));
  root.appendChild(el('div',{id:'status',cls:'flash ok',style:'display:none'}));
  var groups={},order=[],nodes=[];j.fields.forEach(function(f){var g=f.group||'Settings';if(!groups[g]){groups[g]=el('div',{cls:'card'},[el('h2',{text:g})]);order.push(g)}var n=input(f,j.settings[f.key]);nodes.push([f,n]);groups[g].appendChild(n)});
  order.forEach(function(g){root.appendChild(groups[g])});
@@ -215,26 +217,26 @@ function render(){root.innerHTML='';var j=DATA,ins=j.install,st=ins.stats||{};
   function privacy(d) {
     const p = d && d.privacy;
     return legal('Privacy Policy', d, [
-      ['What we receive', 'When you install ' + its(d) + ', HighLevel gives us an access token for the sub-account and sends us events for the scopes you approve' +
+      ['What we receive', 'When you install ' + its(d) + ', your CRM gives us an access token for your account and sends us events for the scopes you approve' +
         (p ? ': ' + p.reads + '.' : ' (for example new contacts, inbound messages, appointments and opportunities).') +
-        ' The settings page receives your HighLevel user ID and role through HighLevel single sign-on.'],
-      ['What we change in your account', p ? 'Only this: ' + p.writes + '.' : 'Only what each App’s documentation describes: contacts, opportunities and messages in your sub-account.'],
-      ['What we store', 'OAuth tokens (encrypted), the sub-account name and time zone, your settings, ' + (p ? p.stores : 'small working data each App needs (scores, counters, cooldowns, birthday dates by contact ID)') +
+        ' The settings page receives your CRM user ID and role through the CRM\u2019s single sign-on.'],
+      ['What we change in your account', p ? 'Only this: ' + p.writes + '.' : 'Only what each App’s documentation describes: contacts, opportunities and messages in your account.'],
+      ['What we store', 'OAuth tokens (encrypted), your account name and time zone, your settings, ' + (p ? p.stores : 'small working data each App needs (scores, counters, cooldowns, birthday dates by contact ID)') +
         ', and a 30-day activity log. We do not store message contents or copies of your contact records.'],
       ['How we use it', 'Only to run ' + (d ? d.name : 'the App you installed') + '. We never sell or share your data and never use it for advertising.'],
       ['Where it lives', 'Our servers run on Vercel and data is stored in MongoDB Atlas, both encrypted in transit and at rest.'],
-      ['Retention and deletion', 'Uninstalling revokes our access immediately. Activity logs expire after 30 days. Email us to delete all data for a sub-account at any time.'],
+      ['Retention and deletion', 'Uninstalling revokes our access immediately. Activity logs expire after 30 days. Email us to delete all data for an account at any time.'],
       ['Contact', 'Questions: ' + brand.supportEmail]
     ]);
   }
   function terms(d) {
     return legal('Terms of Service', d, [
-      ['The service', (d ? d.name + ' ' + d.description.charAt(0).toLowerCase() + d.description.slice(1) : 'Each App automates tasks inside your HighLevel sub-account.') +
-        ' Pricing (' + brand.price + (d ? '' : ' per App') + ') and billing are handled by the HighLevel Marketplace.'],
-      ['Your responsibilities', 'You are responsible for the messages and changes ' + its(d) + ' makes on your behalf, including consent, opt-out and messaging laws (such as TCPA, CAN-SPAM and GDPR) and HighLevel’s own policies.'],
-      ['Availability', 'We aim for high availability but provide ' + its(d) + ' "as is", without warranties. HighLevel outages or API changes may affect it.'],
+      ['The service', (d ? d.name + ' ' + d.description.charAt(0).toLowerCase() + d.description.slice(1) : 'Each App automates tasks inside your CRM account.') +
+        ' Pricing (' + brand.price + (d ? '' : ' per App') + ') and billing are handled by your CRM\u2019s app marketplace.'],
+      ['Your responsibilities', 'You are responsible for the messages and changes ' + its(d) + ' makes on your behalf, including consent, opt-out and messaging laws (such as TCPA, CAN-SPAM and GDPR) and your CRM provider’s own policies.'],
+      ['Availability', 'We aim for high availability but provide ' + its(d) + ' "as is", without warranties. CRM outages or API changes may affect it.'],
       ['Liability', 'To the extent the law allows, our total liability is limited to the fees you paid for ' + (d ? 'the App' : 'the affected App') + ' in the previous three months.'],
-      ['Cancellation', 'Uninstall in HighLevel at any time; billing stops according to the Marketplace’s rules.'],
+      ['Cancellation', 'Uninstall from your CRM at any time; billing stops according to the app marketplace’s rules.'],
       ['Contact', brand.supportEmail]
     ]);
   }
@@ -243,12 +245,12 @@ function render(){root.innerHTML='';var j=DATA,ins=j.install,st=ins.stats||{};
     const faq = (d.faq || []).map((q) => '<h3>' + esc(q[0]) + '</h3><p>' + esc(q[1]) + '</p>').join('');
     return page(d.name + ' support', '<div class="prose"><h1>' + esc(d.name) + ' support</h1><p class="sub">We’re here to help. Most questions are answered below.</p>' +
       '<div class="card"><h2>Contact us</h2><p>Email <a href="mailto:' + esc(brand.supportEmail) + '?subject=' + encodeURIComponent(d.name + ' support') + '">' + esc(brand.supportEmail) + '</a>' +
-      ' with your sub-account name and what you expected to happen. We reply within one business day.</p>' +
+      ' with your account name and what you expected to happen. We reply within one business day.</p>' +
       '<p class="note">Tip: the <b>Recent activity</b> list at the bottom of the app page shows every action the app took, and any error.</p></div>' +
       '<div class="card"><h2>Common questions</h2>' + faq + '</div>' +
-      '<div class="card"><h2>Install, open, uninstall</h2><ul><li><b>Install:</b> from the HighLevel Marketplace, or <a href="/' + d.slug + '/install">install here</a>.</li>' +
-      '<li><b>Open:</b> click <b>' + esc(d.name) + '</b> in the sub-account’s left menu. Only admins can change settings.</li>' +
-      '<li><b>Uninstall:</b> remove the app in the Marketplace. It stops immediately.</li></ul>' +
+      '<div class="card"><h2>Install, open, uninstall</h2><ul><li><b>Install:</b> from your CRM\u2019s app marketplace, or <a href="/' + d.slug + '/install">install here</a>.</li>' +
+      '<li><b>Open:</b> click <b>' + esc(d.name) + '</b> in your account’s left menu. Only admins can change settings.</li>' +
+      '<li><b>Uninstall:</b> remove the app from your CRM\u2019s app marketplace. It stops immediately.</li></ul>' +
       '<p>More detail in the <a href="/' + d.slug + '/docs">documentation</a>.</p></div></div>', { def: d });
   }
 
@@ -271,8 +273,11 @@ function render(){root.innerHTML='';var j=DATA,ins=j.install,st=ins.stats||{};
     return page('Admin', '<div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px"><h1>Admin' + (o.filter ? ': ' + esc(name[o.filter]) : '') + '</h1>' +
       '<form method="post" action="/admin/logout"><input type="hidden" name="_csrf" value="' + esc(o.csrf) + '"><button class="btn sm">Sign out</button></form></div>' +
       (o.filter ? '<p><a href="/admin">&larr; All apps</a></p>' : '<div class="grid" style="margin-bottom:16px">' + counts + '</div>') +
-      '<div class="card"><h2>Installs</h2><div class="scroll"><table><tr><th>App</th><th>Sub-account</th><th>Status</th><th>Events / actions</th><th>Last event</th><th>Installed</th></tr>' +
+      '<div class="card"><h2>Installs</h2><div class="scroll"><table><tr><th>App</th><th>Account</th><th>Status</th><th>Events / actions</th><th>Last event</th><th>Installed</th></tr>' +
       (rows || '<tr><td colspan="6" class="note">No installs yet.</td></tr>') + '</table></div></div>' +
+      (o.filter ? '' : '<div class="card"><h2>Marketplace listing values</h2><p class="note">Copy these into each app in the HighLevel developer portal.</p>' +
+        apps.map((d) => '<details style="margin:8px 0"><summary><b>' + esc(d.icon + ' ' + d.name) + '</b></summary><div class="scroll"><table>' +
+          listingRows(d).map((r) => '<tr><th style="width:220px">' + esc(r[0]) + '</th><td><code>' + esc(r[1]) + '</code></td></tr>').join('') + '</table></div></details>').join('') + '</div>') +
       '<div class="card"><h2>Activity</h2><div class="scroll"><table><tr><th>When</th><th>App</th><th>Location</th><th>Type</th><th>Detail</th></tr>' + (ev || '<tr><td colspan="5" class="note">Nothing yet.</td></tr>') + '</table></div></div>',
     { bare: true, wide: true });
   }

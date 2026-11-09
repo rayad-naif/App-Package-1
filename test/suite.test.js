@@ -94,7 +94,7 @@ test('public pages render for every app', async () => {
       assert.strictEqual(l.status, 200);
       assert.match(l.text, /\$97/);
       const d = await t.req('GET', '/' + a.slug + '/docs');
-      assert.match(d.text, new RegExp('http://suite.test/' + a.slug + '/oauth/callback'));
+      assert.strictEqual(d.status, 200);
       assert.strictEqual((await t.req('GET', '/' + a.slug + '/embed')).status, 200);
       for (const sub of ['/support', '/privacy', '/terms']) {
         const r = await t.req('GET', '/' + a.slug + sub);
@@ -102,12 +102,20 @@ test('public pages render for every app', async () => {
         assert.ok(r.text.includes(a.name), a.slug + sub + ' names the app');
         assert.ok(r.text.includes('href="/' + a.slug + '/privacy"') && r.text.includes('href="/' + a.slug + '/terms"'), a.slug + sub + ' links its own legal pages');
       }
-      assert.match(d.text, new RegExp('http://suite.test/' + a.slug + '/privacy'));
+
       const i = await t.req('GET', '/' + a.slug + '/install');
       assert.strictEqual(i.status, 302);
       assert.match(i.headers.get('location'), /chooselocation.*client_id=app/);
     }
     assert.strictEqual((await t.req('GET', '/nope')).status, 404);
+    // White-label: no CRM brand or plan names on anything customers see.
+    const visible = (h) => h.replace(/<style[\s\S]*?<\/style>/g, '').replace(/<[^>]+>/g, ' ');
+    const pages = ['/', '/privacy', '/terms'];
+    for (const a of t.app.locals.apps) for (const x of ['', '/docs', '/support', '/privacy', '/terms', '/embed']) pages.push('/' + a.slug + x);
+    for (const p of pages) {
+      const text = visible((await t.req('GET', p)).text);
+      assert.doesNotMatch(text, /high ?level|\bghl\b|leadconnector|sub-?account|agenc(y|ies)/i, p + ' mentions a brand or plan name');
+    }
     const h = await t.req('GET', '/health');
     assert.strictEqual(h.json.apps['after-hours'].configured, true);
   } finally { t.close(); }
@@ -324,6 +332,11 @@ test('admin panel requires the password', async () => {
     const page = await t.req('GET', '/admin', null, { Cookie: cookie });
     assert.strictEqual(page.status, 200);
     assert.match(page.text, /Acme Dental/);
+    // The Marketplace listing values (owner only) are here, not on the public docs.
+    for (const a of t.app.locals.apps) {
+      assert.ok(page.text.includes('http://suite.test/' + a.slug + '/oauth/callback'), a.slug + ' redirect URL');
+      assert.ok(page.text.includes('http://suite.test/' + a.slug + '/privacy'), a.slug + ' privacy URL');
+    }
   } finally { t.close(); }
 });
 

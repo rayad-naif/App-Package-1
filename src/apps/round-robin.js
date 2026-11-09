@@ -89,7 +89,7 @@ module.exports = {
   scopes: ['contacts.readonly', 'contacts.write', 'opportunities.readonly', 'opportunities.write', 'users.readonly', 'locations.readonly'],
   webhookEvents: ['ContactCreate', 'OpportunityCreate'],
   privacy: {
-    reads: 'new contact and opportunity events, the contact\u2019s owner and tags, and the sub-account\u2019s list of users (names and emails, to show the rotation)',
+    reads: 'new contact and opportunity events, the contact\u2019s owner and tags, and your account\u2019s list of users (names and emails, to show the rotation)',
     writes: 'the assigned user on contacts and opportunities, and an optional note',
     stores: 'your rotation weights and a counter of how many leads have been assigned'
   },
