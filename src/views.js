@@ -31,7 +31,6 @@ h3{font-size:16px;margin:18px 0 6px}
 .btn.sm{padding:6px 11px;font-size:13px}
 .hero{padding:30px 0 10px}
 .badge{display:inline-block;font-size:12px;font-weight:700;padding:3px 10px;border-radius:99px;background:var(--soft);color:var(--accent)}
-.price{font-size:28px;font-weight:800}
 .app-ico{font-size:30px;width:54px;height:54px;border-radius:14px;display:grid;place-items:center;margin-bottom:10px}
 .feat p{margin:0;color:var(--muted);font-size:14px}
 .note{color:var(--muted);font-size:13.5px}
@@ -95,7 +94,7 @@ function createViews(cfg, apps) {
 
   function home() {
     const cards = apps.map((d) => '<div class="card">' + icon(d) + '<h2 style="margin-bottom:4px">' + esc(d.name) + '</h2><p class="note" style="margin:0 0 10px">' + esc(d.tagline) + '</p>' +
-      '<p style="font-size:14px">' + esc(d.description) + '</p><p><b>' + esc(brand.price) + '</b></p><a class="btn pri" href="/' + d.slug + '">Learn more</a></div>').join('');
+      '<p style="font-size:14px">' + esc(d.description) + '</p><a class="btn pri" href="/' + d.slug + '">Learn more</a></div>').join('');
     return page('Apps for your CRM', '<div class="hero"><span class="badge">App Marketplace</span><h1>' + ['Zero','One','Two','Three','Four','Five','Six','Seven','Eight','Nine','Ten'][apps.length] + ' automations every CRM account needs</h1>' +
       '<p class="sub">Install from your CRM\u2019s app marketplace, open the app in your account, done. No Zapier, no workflow spaghetti.</p></div><div class="grid">' + cards + '</div>');
   }
@@ -103,7 +102,7 @@ function createViews(cfg, apps) {
   function landing(d) {
     const feats = d.features.map((f) => '<div class="card feat"><h3 style="margin-top:0">' + esc(f[0]) + '</h3><p>' + esc(f[1]) + '</p></div>').join('');
     return page(d.name, '<div class="hero">' + icon(d) + '<h1>' + esc(d.tagline) + '</h1><p class="sub">' + esc(d.description) + '</p>' +
-      '<div style="display:flex;gap:12px;align-items:center;flex-wrap:wrap"><span class="price">' + esc(brand.price) + '</span>' + installBtn(d) +
+      '<div style="display:flex;gap:12px;align-items:center;flex-wrap:wrap">' + installBtn(d) +
       '<a class="btn" href="/' + d.slug + '/docs">How it works</a><a class="btn" href="/' + d.slug + '/support">Support</a></div></div><div class="grid" style="margin-top:26px">' + feats + '</div>' +
       '<div class="card"><h2>Getting started</h2><ol class="steps"><li>Install ' + esc(d.name) + ' from your CRM\u2019s app marketplace.</li>' +
       '<li>Open <b>' + esc(d.name) + '</b> from your account’s left menu.</li><li>Review the settings (the defaults work out of the box) and click Save.</li></ol></div>',
@@ -132,7 +131,7 @@ function createViews(cfg, apps) {
   function docs(d) {
     const settings = d.fields.map((f) => '<li><b>' + esc(f.label) + '</b>' + (f.help ? ': ' + esc(f.help) : '') + '</li>').join('');
     return page(d.name + ' docs', '<div class="prose"><h1>' + esc(d.name) + '</h1><p class="sub">' + esc(d.description) + '</p>' +
-      '<div class="card"><h2>Using the app</h2><ol class="steps"><li>Install it from your CRM\u2019s app marketplace (' + esc(brand.price) + ').</li>' +
+      '<div class="card"><h2>Using the app</h2><ol class="steps"><li>Install it from your CRM\u2019s app marketplace.</li>' +
       '<li>In your account, open <b>' + esc(d.name) + '</b> in the left menu. Admins can change settings; other users can view them.</li>' +
       '<li>Settings save instantly and apply to the next event. Recent activity is shown at the bottom of the page.</li></ol>' +
       '<h3>Settings</h3><ul>' + settings + '</ul></div>' +
@@ -231,12 +230,11 @@ function render(){root.innerHTML='';var j=DATA,ins=j.install,st=ins.stats||{};
   }
   function terms(d) {
     return legal('Terms of Service', d, [
-      ['The service', (d ? d.name + ' ' + d.description.charAt(0).toLowerCase() + d.description.slice(1) : 'Each App automates tasks inside your CRM account.') +
-        ' Pricing (' + brand.price + (d ? '' : ' per App') + ') and billing are handled by your CRM\u2019s app marketplace.'],
+      ['The service', (d ? d.name + ' ' + d.description.charAt(0).toLowerCase() + d.description.slice(1) : 'Each App automates tasks inside your CRM account.')],
       ['Your responsibilities', 'You are responsible for the messages and changes ' + its(d) + ' makes on your behalf, including consent, opt-out and messaging laws (such as TCPA, CAN-SPAM and GDPR) and your CRM provider’s own policies.'],
       ['Availability', 'We aim for high availability but provide ' + its(d) + ' "as is", without warranties. CRM outages or API changes may affect it.'],
-      ['Liability', 'To the extent the law allows, our total liability is limited to the fees you paid for ' + (d ? 'the App' : 'the affected App') + ' in the previous three months.'],
-      ['Cancellation', 'Uninstall from your CRM at any time; billing stops according to the app marketplace’s rules.'],
+      ['Liability', 'To the extent the law allows, we are not liable for indirect or consequential losses arising from your use of ' + its(d) + '.'],
+      ['Cancellation', 'Uninstall from your CRM at any time; ' + its(d) + ' stops immediately.'],
       ['Contact', brand.supportEmail]
     ]);
   }

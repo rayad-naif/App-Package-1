@@ -1,6 +1,6 @@
 # App Package 1: 6 HighLevel Marketplace apps, one domain
 
-Six separate HighLevel Marketplace apps (Target User: **Sub-account**), each sold on its own for **$97**, all served by **one Vercel project** (one serverless function, free Hobby plan) on **one domain**, each under its own path.
+Six separate HighLevel Marketplace apps (Target User: **Sub-account**) (each its own listing), all served by **one Vercel project** (one serverless function, free Hobby plan) on **one domain**, each under its own path.
 
 | App | Path | What it does | Webhook events |
 | --- | --- | --- | --- |
@@ -35,11 +35,10 @@ Step-by-step, click by click: [`SETUP-HIGHLEVEL.md`](SETUP-HIGHLEVEL.md). Summar
 For each app in the HighLevel developer portal (marketplace.gohighlevel.com):
 
 1. **Create app**: Target User *Sub-account*, distribution *Agency and Sub-account* (bulk agency installs are supported).
-2. **Pricing**: paid, $97 (monthly or one-time, your choice in the portal; `PRICE_LABEL` sets the text on the landing page). HighLevel handles billing; the app runs only while installed.
-3. **Auth**: add the Redirect URL and the scopes. `/admin` lists every value for each app, filled in with your domain. Create a client ID/secret and the SSO **Shared Secret**.
-4. **Webhooks**: the Webhook URL, plus the events in the table above (and INSTALL / UNINSTALL).
-5. **Custom page**: the Live URL `/<slug>/embed`. It signs the user in with HighLevel SSO and shows the settings; admins can edit, other users see them read-only.
-6. Put the three values into Vercel as `<PREFIX>_CLIENT_ID`, `<PREFIX>_CLIENT_SECRET`, `<PREFIX>_SSO_KEY` (prefixes: `LEAD_SCORER`, `ROUND_ROBIN`, `CONTACT_CLEANER`, `AFTER_HOURS`, `BIRTHDAY_GREETER`, `INTENT_RADAR`). `/health` shows which apps are configured.
+2. **Auth**: add the Redirect URL and the scopes. `/admin` lists every value for each app, filled in with your domain. Create a client ID/secret and the SSO **Shared Secret**.
+3. **Webhooks**: the Webhook URL, plus the events in the table above (and INSTALL / UNINSTALL).
+4. **Custom page**: the Live URL `/<slug>/embed`. It signs the user in with HighLevel SSO and shows the settings; admins can edit, other users see them read-only.
+5. Put the three values into Vercel as `<PREFIX>_CLIENT_ID`, `<PREFIX>_CLIENT_SECRET`, `<PREFIX>_SSO_KEY` (prefixes: `LEAD_SCORER`, `ROUND_ROBIN`, `CONTACT_CLEANER`, `AFTER_HOURS`, `BIRTHDAY_GREETER`, `INTENT_RADAR`). `/health` shows which apps are configured.
 
 ## Deploy on Vercel (free)
 

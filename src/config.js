@@ -55,8 +55,7 @@ function load(envIn) {
       name: env.BRAND_NAME || 'Growth Apps',
       supportEmail: env.SUPPORT_EMAIL || 'support@example.com',
       legalName: env.LEGAL_NAME || env.BRAND_NAME || 'Growth Apps',
-      legalUpdated: env.LEGAL_UPDATED || 'November 9, 2026',
-      price: env.PRICE_LABEL || '$97 / month'
+      legalUpdated: env.LEGAL_UPDATED || 'November 9, 2026'
     }
   };
 }
