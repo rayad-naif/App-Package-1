@@ -3,7 +3,6 @@
    Usage: node scripts/listing-guide.js https://your-domain [> SETUP-HIGHLEVEL.md] */
 const apps = require('../src/apps');
 const base = (process.argv[2] || 'https://app-package-1.vercel.app').replace(/\/+$/, '');
-const price = process.env.PRICE_LABEL || '$97 / month';
 const out = [];
 const w = (s) => out.push(s == null ? '' : s);
 
@@ -11,7 +10,7 @@ w('# Creating the HighLevel Marketplace listings');
 w();
 w('Values below use `' + base + '`. If your Vercel domain is different, open `/admin` on your deployment: it shows the same values with your real domain (or run `node scripts/listing-guide.js https://your-domain > SETUP-HIGHLEVEL.md`).');
 w();
-w('Do this once per app at **marketplace.gohighlevel.com** (developer portal) → **My Apps** → **Create App**. After each app, paste its three keys into Vercel (step 6) and redeploy.');
+w('Do this once per app at **marketplace.gohighlevel.com** (developer portal) → **My Apps** → **Create App**. After each app, paste its three keys into Vercel (step 5) and redeploy.');
 w();
 w('| Profile | Apps |');
 w('| --- | --- |');
@@ -41,27 +40,25 @@ for (const a of apps) {
   w('- Privacy policy: `' + u + '/privacy`');
   w('- Terms of service: `' + u + '/terms`');
   w();
-  w('**3. Pricing**: Paid, ' + price + ' (set the interval you want; billing is handled by HighLevel).');
-  w();
-  w('**4. Advanced Settings → Auth**');
+  w('**3. Advanced Settings → Auth**');
   w('- Scopes: ' + a.scopes.map((s) => '`' + s + '`').join(', '));
   w('- Redirect URL: `' + u + '/oauth/callback`');
   w('- Client Keys → **Add**: copy the **Client ID** and **Client Secret**.');
   w('- SSO → **Shared Secret**: generate and copy it.');
   w();
-  w('**5. Webhooks and custom page**');
+  w('**4. Webhooks and custom page**');
   w('- Default Webhook URL: `' + u + '/webhook`');
   w('- Events: ' + ['INSTALL', 'UNINSTALL'].concat(a.webhookEvents).map((e) => '`' + e + '`').join(', '));
   w('- Custom Page (left-menu link) → Live URL: `' + u + '/embed`, name it `' + a.name + '`');
   w();
-  w('**6. Vercel** → Project → Settings → Environment Variables (Production), then Redeploy:');
+  w('**5. Vercel** → Project → Settings → Environment Variables (Production), then Redeploy:');
   w('```');
   w(a.envPrefix + '_CLIENT_ID=<Client ID>');
   w(a.envPrefix + '_CLIENT_SECRET=<Client Secret>');
   w(a.envPrefix + '_SSO_KEY=<Shared Secret>');
   w('```');
   w();
-  w('**7. Test**: install it into a test sub-account from the listing’s install link, open it from the left menu, and check `' + base + '/health` shows `"configured": true, "sso": true` for `' + a.slug + '`. Then submit for review.');
+  w('**6. Test**: install it into a test sub-account from the listing’s install link, open it from the left menu, and check `' + base + '/health` shows `"configured": true, "sso": true` for `' + a.slug + '`. Then submit for review.');
   w();
 }
 process.stdout.write(out.join('\n'));

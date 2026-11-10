@@ -96,7 +96,6 @@ test('public pages render for every app', async () => {
     for (const a of t.app.locals.apps) {
       const l = await t.req('GET', '/' + a.slug);
       assert.strictEqual(l.status, 200);
-      assert.match(l.text, /\$97/);
       const d = await t.req('GET', '/' + a.slug + '/docs');
       assert.strictEqual(d.status, 200);
       assert.strictEqual((await t.req('GET', '/' + a.slug + '/embed')).status, 200);
@@ -119,6 +118,7 @@ test('public pages render for every app', async () => {
     for (const p of pages) {
       const text = visible((await t.req('GET', p)).text);
       assert.doesNotMatch(text, /high ?level|\bghl\b|leadconnector|sub-?account|agenc(y|ies)/i, p + ' mentions a brand or plan name');
+      assert.doesNotMatch(text, /\$\s?\d|per month|\/\s?month|billing|fees you paid/i, p + ' shows pricing');
     }
     const h = await t.req('GET', '/health');
     assert.strictEqual(h.json.apps['after-hours'].configured, true);

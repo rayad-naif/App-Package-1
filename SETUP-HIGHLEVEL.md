@@ -2,7 +2,7 @@
 
 Values below use `https://app-package-1.vercel.app`. If your Vercel domain is different, open `/admin` on your deployment: it shows the same values with your real domain (or run `node scripts/listing-guide.js https://your-domain > SETUP-HIGHLEVEL.md`).
 
-Do this once per app at **marketplace.gohighlevel.com** (developer portal) → **My Apps** → **Create App**. After each app, paste its three keys into Vercel (step 6) and redeploy.
+Do this once per app at **marketplace.gohighlevel.com** (developer portal) → **My Apps** → **Create App**. After each app, paste its three keys into Vercel (step 5) and redeploy.
 
 | Profile | Apps |
 | --- | --- |
@@ -33,27 +33,25 @@ Do this once per app at **marketplace.gohighlevel.com** (developer portal) → *
 - Privacy policy: `https://app-package-1.vercel.app/lead-scorer/privacy`
 - Terms of service: `https://app-package-1.vercel.app/lead-scorer/terms`
 
-**3. Pricing**: Paid, $97 / month (set the interval you want; billing is handled by HighLevel).
-
-**4. Advanced Settings → Auth**
+**3. Advanced Settings → Auth**
 - Scopes: `contacts.readonly`, `contacts.write`, `locations.readonly`, `locations/customFields.readonly`, `locations/customFields.write`
 - Redirect URL: `https://app-package-1.vercel.app/lead-scorer/oauth/callback`
 - Client Keys → **Add**: copy the **Client ID** and **Client Secret**.
 - SSO → **Shared Secret**: generate and copy it.
 
-**5. Webhooks and custom page**
+**4. Webhooks and custom page**
 - Default Webhook URL: `https://app-package-1.vercel.app/lead-scorer/webhook`
 - Events: `INSTALL`, `UNINSTALL`, `ContactCreate`, `ContactDelete`, `InboundMessage`, `AppointmentCreate`, `OpportunityCreate`, `OpportunityStatusUpdate`
 - Custom Page (left-menu link) → Live URL: `https://app-package-1.vercel.app/lead-scorer/embed`, name it `Lead Scorer`
 
-**6. Vercel** → Project → Settings → Environment Variables (Production), then Redeploy:
+**5. Vercel** → Project → Settings → Environment Variables (Production), then Redeploy:
 ```
 LEAD_SCORER_CLIENT_ID=<Client ID>
 LEAD_SCORER_CLIENT_SECRET=<Client Secret>
 LEAD_SCORER_SSO_KEY=<Shared Secret>
 ```
 
-**7. Test**: install it into a test sub-account from the listing’s install link, open it from the left menu, and check `https://app-package-1.vercel.app/health` shows `"configured": true, "sso": true` for `lead-scorer`. Then submit for review.
+**6. Test**: install it into a test sub-account from the listing’s install link, open it from the left menu, and check `https://app-package-1.vercel.app/health` shows `"configured": true, "sso": true` for `lead-scorer`. Then submit for review.
 
 ---
 
@@ -79,27 +77,25 @@ LEAD_SCORER_SSO_KEY=<Shared Secret>
 - Privacy policy: `https://app-package-1.vercel.app/round-robin/privacy`
 - Terms of service: `https://app-package-1.vercel.app/round-robin/terms`
 
-**3. Pricing**: Paid, $97 / month (set the interval you want; billing is handled by HighLevel).
-
-**4. Advanced Settings → Auth**
+**3. Advanced Settings → Auth**
 - Scopes: `contacts.readonly`, `contacts.write`, `opportunities.readonly`, `opportunities.write`, `users.readonly`, `locations.readonly`
 - Redirect URL: `https://app-package-1.vercel.app/round-robin/oauth/callback`
 - Client Keys → **Add**: copy the **Client ID** and **Client Secret**.
 - SSO → **Shared Secret**: generate and copy it.
 
-**5. Webhooks and custom page**
+**4. Webhooks and custom page**
 - Default Webhook URL: `https://app-package-1.vercel.app/round-robin/webhook`
 - Events: `INSTALL`, `UNINSTALL`, `ContactCreate`, `OpportunityCreate`
 - Custom Page (left-menu link) → Live URL: `https://app-package-1.vercel.app/round-robin/embed`, name it `Round Robin Pro`
 
-**6. Vercel** → Project → Settings → Environment Variables (Production), then Redeploy:
+**5. Vercel** → Project → Settings → Environment Variables (Production), then Redeploy:
 ```
 ROUND_ROBIN_CLIENT_ID=<Client ID>
 ROUND_ROBIN_CLIENT_SECRET=<Client Secret>
 ROUND_ROBIN_SSO_KEY=<Shared Secret>
 ```
 
-**7. Test**: install it into a test sub-account from the listing’s install link, open it from the left menu, and check `https://app-package-1.vercel.app/health` shows `"configured": true, "sso": true` for `round-robin`. Then submit for review.
+**6. Test**: install it into a test sub-account from the listing’s install link, open it from the left menu, and check `https://app-package-1.vercel.app/health` shows `"configured": true, "sso": true` for `round-robin`. Then submit for review.
 
 ---
 
@@ -125,27 +121,25 @@ ROUND_ROBIN_SSO_KEY=<Shared Secret>
 - Privacy policy: `https://app-package-1.vercel.app/contact-cleaner/privacy`
 - Terms of service: `https://app-package-1.vercel.app/contact-cleaner/terms`
 
-**3. Pricing**: Paid, $97 / month (set the interval you want; billing is handled by HighLevel).
-
-**4. Advanced Settings → Auth**
+**3. Advanced Settings → Auth**
 - Scopes: `contacts.readonly`, `contacts.write`, `locations.readonly`
 - Redirect URL: `https://app-package-1.vercel.app/contact-cleaner/oauth/callback`
 - Client Keys → **Add**: copy the **Client ID** and **Client Secret**.
 - SSO → **Shared Secret**: generate and copy it.
 
-**5. Webhooks and custom page**
+**4. Webhooks and custom page**
 - Default Webhook URL: `https://app-package-1.vercel.app/contact-cleaner/webhook`
 - Events: `INSTALL`, `UNINSTALL`, `ContactCreate`
 - Custom Page (left-menu link) → Live URL: `https://app-package-1.vercel.app/contact-cleaner/embed`, name it `Contact Cleaner`
 
-**6. Vercel** → Project → Settings → Environment Variables (Production), then Redeploy:
+**5. Vercel** → Project → Settings → Environment Variables (Production), then Redeploy:
 ```
 CONTACT_CLEANER_CLIENT_ID=<Client ID>
 CONTACT_CLEANER_CLIENT_SECRET=<Client Secret>
 CONTACT_CLEANER_SSO_KEY=<Shared Secret>
 ```
 
-**7. Test**: install it into a test sub-account from the listing’s install link, open it from the left menu, and check `https://app-package-1.vercel.app/health` shows `"configured": true, "sso": true` for `contact-cleaner`. Then submit for review.
+**6. Test**: install it into a test sub-account from the listing’s install link, open it from the left menu, and check `https://app-package-1.vercel.app/health` shows `"configured": true, "sso": true` for `contact-cleaner`. Then submit for review.
 
 ---
 
@@ -171,27 +165,25 @@ CONTACT_CLEANER_SSO_KEY=<Shared Secret>
 - Privacy policy: `https://app-package-1.vercel.app/after-hours/privacy`
 - Terms of service: `https://app-package-1.vercel.app/after-hours/terms`
 
-**3. Pricing**: Paid, $97 / month (set the interval you want; billing is handled by HighLevel).
-
-**4. Advanced Settings → Auth**
+**3. Advanced Settings → Auth**
 - Scopes: `contacts.readonly`, `contacts.write`, `conversations.readonly`, `conversations.write`, `conversations/message.readonly`, `conversations/message.write`, `locations.readonly`
 - Redirect URL: `https://app-package-1.vercel.app/after-hours/oauth/callback`
 - Client Keys → **Add**: copy the **Client ID** and **Client Secret**.
 - SSO → **Shared Secret**: generate and copy it.
 
-**5. Webhooks and custom page**
+**4. Webhooks and custom page**
 - Default Webhook URL: `https://app-package-1.vercel.app/after-hours/webhook`
 - Events: `INSTALL`, `UNINSTALL`, `InboundMessage`
 - Custom Page (left-menu link) → Live URL: `https://app-package-1.vercel.app/after-hours/embed`, name it `After-Hours Responder`
 
-**6. Vercel** → Project → Settings → Environment Variables (Production), then Redeploy:
+**5. Vercel** → Project → Settings → Environment Variables (Production), then Redeploy:
 ```
 AFTER_HOURS_CLIENT_ID=<Client ID>
 AFTER_HOURS_CLIENT_SECRET=<Client Secret>
 AFTER_HOURS_SSO_KEY=<Shared Secret>
 ```
 
-**7. Test**: install it into a test sub-account from the listing’s install link, open it from the left menu, and check `https://app-package-1.vercel.app/health` shows `"configured": true, "sso": true` for `after-hours`. Then submit for review.
+**6. Test**: install it into a test sub-account from the listing’s install link, open it from the left menu, and check `https://app-package-1.vercel.app/health` shows `"configured": true, "sso": true` for `after-hours`. Then submit for review.
 
 ---
 
@@ -217,27 +209,25 @@ AFTER_HOURS_SSO_KEY=<Shared Secret>
 - Privacy policy: `https://app-package-1.vercel.app/birthday-greeter/privacy`
 - Terms of service: `https://app-package-1.vercel.app/birthday-greeter/terms`
 
-**3. Pricing**: Paid, $97 / month (set the interval you want; billing is handled by HighLevel).
-
-**4. Advanced Settings → Auth**
+**3. Advanced Settings → Auth**
 - Scopes: `contacts.readonly`, `contacts.write`, `conversations.readonly`, `conversations.write`, `conversations/message.readonly`, `conversations/message.write`, `locations.readonly`
 - Redirect URL: `https://app-package-1.vercel.app/birthday-greeter/oauth/callback`
 - Client Keys → **Add**: copy the **Client ID** and **Client Secret**.
 - SSO → **Shared Secret**: generate and copy it.
 
-**5. Webhooks and custom page**
+**4. Webhooks and custom page**
 - Default Webhook URL: `https://app-package-1.vercel.app/birthday-greeter/webhook`
 - Events: `INSTALL`, `UNINSTALL`, `ContactCreate`, `ContactUpdate`, `ContactDelete`
 - Custom Page (left-menu link) → Live URL: `https://app-package-1.vercel.app/birthday-greeter/embed`, name it `Birthday Greeter`
 
-**6. Vercel** → Project → Settings → Environment Variables (Production), then Redeploy:
+**5. Vercel** → Project → Settings → Environment Variables (Production), then Redeploy:
 ```
 BIRTHDAY_GREETER_CLIENT_ID=<Client ID>
 BIRTHDAY_GREETER_CLIENT_SECRET=<Client Secret>
 BIRTHDAY_GREETER_SSO_KEY=<Shared Secret>
 ```
 
-**7. Test**: install it into a test sub-account from the listing’s install link, open it from the left menu, and check `https://app-package-1.vercel.app/health` shows `"configured": true, "sso": true` for `birthday-greeter`. Then submit for review.
+**6. Test**: install it into a test sub-account from the listing’s install link, open it from the left menu, and check `https://app-package-1.vercel.app/health` shows `"configured": true, "sso": true` for `birthday-greeter`. Then submit for review.
 
 ---
 
@@ -263,24 +253,22 @@ BIRTHDAY_GREETER_SSO_KEY=<Shared Secret>
 - Privacy policy: `https://app-package-1.vercel.app/intent-radar/privacy`
 - Terms of service: `https://app-package-1.vercel.app/intent-radar/terms`
 
-**3. Pricing**: Paid, $97 / month (set the interval you want; billing is handled by HighLevel).
-
-**4. Advanced Settings → Auth**
+**3. Advanced Settings → Auth**
 - Scopes: `contacts.readonly`, `contacts.write`, `conversations.readonly`, `conversations/message.readonly`, `locations.readonly`
 - Redirect URL: `https://app-package-1.vercel.app/intent-radar/oauth/callback`
 - Client Keys → **Add**: copy the **Client ID** and **Client Secret**.
 - SSO → **Shared Secret**: generate and copy it.
 
-**5. Webhooks and custom page**
+**4. Webhooks and custom page**
 - Default Webhook URL: `https://app-package-1.vercel.app/intent-radar/webhook`
 - Events: `INSTALL`, `UNINSTALL`, `InboundMessage`
 - Custom Page (left-menu link) → Live URL: `https://app-package-1.vercel.app/intent-radar/embed`, name it `Intent Radar`
 
-**6. Vercel** → Project → Settings → Environment Variables (Production), then Redeploy:
+**5. Vercel** → Project → Settings → Environment Variables (Production), then Redeploy:
 ```
 INTENT_RADAR_CLIENT_ID=<Client ID>
 INTENT_RADAR_CLIENT_SECRET=<Client Secret>
 INTENT_RADAR_SSO_KEY=<Shared Secret>
 ```
 
-**7. Test**: install it into a test sub-account from the listing’s install link, open it from the left menu, and check `https://app-package-1.vercel.app/health` shows `"configured": true, "sso": true` for `intent-radar`. Then submit for review.
+**6. Test**: install it into a test sub-account from the listing’s install link, open it from the left menu, and check `https://app-package-1.vercel.app/health` shows `"configured": true, "sso": true` for `intent-radar`. Then submit for review.
