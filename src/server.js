@@ -1,22 +1,23 @@
 'use strict';
-/* Local / long-running server. On Vercel, api/index.js is used instead. */
-const config = require('./config');
-const { createSuite } = require('./suite');
+/* Run locally with `npm start`. On Vercel this file is also a valid entry
+   (the "Express" preset imports it): there it only exports the app. */
+const { handler, cfg, problems } = require('./handler');
 
-const cfg = config.load();
-const problems = config.validate(cfg);
-if (problems.length) {
-  console.error('Configuration problems:\n - ' + problems.join('\n - ') + '\nSee .env.example');
-  process.exit(1);
-}
-const app = createSuite(cfg);
-const server = app.listen(cfg.port, () => {
-  console.log('GHL app suite on ' + cfg.baseUrl);
-  for (const a of app.locals.apps) {
-    console.log(' - ' + a.name.padEnd(22) + cfg.baseUrl + '/' + a.slug + (a.ready ? '' : '   (no client id/secret yet)'));
+module.exports = handler;
+
+if (require.main === module && !process.env.VERCEL) {
+  if (problems.length) {
+    console.error('Configuration problems:\n - ' + problems.join('\n - ') + '\nSee .env.example');
+    process.exit(1);
   }
-});
-// The daily job (Vercel Cron does this in production).
-setInterval(() => app.locals.runDaily().catch((e) => console.error('daily failed', e)), 24 * 3600e3).unref();
-process.on('SIGTERM', () => server.close(() => process.exit(0)));
-process.on('SIGINT', () => server.close(() => process.exit(0)));
+  const server = handler.listen(cfg.port, () => {
+    console.log('GHL app suite on ' + cfg.baseUrl);
+    for (const a of handler.locals.apps) {
+      console.log(' - ' + a.name.padEnd(22) + cfg.baseUrl + '/' + a.slug + (a.ready ? '' : '   (no client id/secret yet)'));
+    }
+  });
+  // The daily job (Vercel Cron does this in production).
+  setInterval(() => handler.locals.runDaily().catch((e) => console.error('daily failed', e)), 24 * 3600e3).unref();
+  process.on('SIGTERM', () => server.close(() => process.exit(0)));
+  process.on('SIGINT', () => server.close(() => process.exit(0)));
+}
