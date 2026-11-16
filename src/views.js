@@ -139,9 +139,11 @@ function createViews(cfg, apps) {
   }
 
   function installed(d, r) {
-    const names = r.installs.map((i) => '<li>' + esc(i.name || i.locationId) + '</li>').join('');
+    const names = r.installs.slice(0, 50).map((i) => '<li>' + esc(i.name || i.locationId) + '</li>').join('') +
+      (r.installs.length > 50 ? '<li>and ' + (r.installs.length - 50) + ' more</li>' : '');
+    const later = r.pending ? '<p class="note">' + r.pending + ' more account' + (r.pending === 1 ? ' is' : 's are') + ' set up automatically the first time the app is used there.</p>' : '';
     return page('Installed', '<div class="card" style="max-width:620px;margin:30px auto">' + icon(d) + '<h1>' + esc(d.name) + ' is installed</h1>' +
-      (names ? '<p>Active in:</p><ul>' + names + '</ul>' : '<p>Installed. Each account is activated as soon as the app is added to it.</p>') +
+      (names ? '<p>Active in:</p><ul>' + names + '</ul>' : '<p>Installed. Each account is activated as soon as the app is added to it.</p>') + later +
       '<p>Open <b>' + esc(d.name) + '</b> from your account’s left menu to review the settings. The defaults are already running.</p>' +
       '<a class="btn" href="/' + d.slug + '/docs">Read the docs</a></div>', { def: d });
   }

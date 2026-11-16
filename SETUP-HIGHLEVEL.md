@@ -34,7 +34,7 @@ Do this once per app at **marketplace.gohighlevel.com** (developer portal) → *
 - Terms of service: `https://app-package-1.vercel.app/lead-scorer/terms`
 
 **3. Advanced Settings → Auth**
-- Scopes: `contacts.readonly`, `contacts.write`, `locations.readonly`, `locations/customFields.readonly`, `locations/customFields.write`
+- Scopes: `contacts.readonly`, `contacts.write`, `locations.readonly`, `locations/customFields.readonly`, `locations/customFields.write`, `oauth.readonly`, `oauth.write`
 - Redirect URL: `https://app-package-1.vercel.app/lead-scorer/oauth/callback`
 - Client Keys → **Add**: copy the **Client ID** and **Client Secret**.
 - SSO → **Shared Secret**: generate and copy it.
@@ -78,7 +78,7 @@ LEAD_SCORER_SSO_KEY=<Shared Secret>
 - Terms of service: `https://app-package-1.vercel.app/round-robin/terms`
 
 **3. Advanced Settings → Auth**
-- Scopes: `contacts.readonly`, `contacts.write`, `opportunities.readonly`, `opportunities.write`, `users.readonly`, `locations.readonly`
+- Scopes: `contacts.readonly`, `contacts.write`, `opportunities.readonly`, `opportunities.write`, `users.readonly`, `locations.readonly`, `oauth.readonly`, `oauth.write`
 - Redirect URL: `https://app-package-1.vercel.app/round-robin/oauth/callback`
 - Client Keys → **Add**: copy the **Client ID** and **Client Secret**.
 - SSO → **Shared Secret**: generate and copy it.
@@ -122,7 +122,7 @@ ROUND_ROBIN_SSO_KEY=<Shared Secret>
 - Terms of service: `https://app-package-1.vercel.app/contact-cleaner/terms`
 
 **3. Advanced Settings → Auth**
-- Scopes: `contacts.readonly`, `contacts.write`, `locations.readonly`
+- Scopes: `contacts.readonly`, `contacts.write`, `locations.readonly`, `oauth.readonly`, `oauth.write`
 - Redirect URL: `https://app-package-1.vercel.app/contact-cleaner/oauth/callback`
 - Client Keys → **Add**: copy the **Client ID** and **Client Secret**.
 - SSO → **Shared Secret**: generate and copy it.
@@ -166,7 +166,7 @@ CONTACT_CLEANER_SSO_KEY=<Shared Secret>
 - Terms of service: `https://app-package-1.vercel.app/after-hours/terms`
 
 **3. Advanced Settings → Auth**
-- Scopes: `contacts.readonly`, `contacts.write`, `conversations.readonly`, `conversations.write`, `conversations/message.readonly`, `conversations/message.write`, `locations.readonly`
+- Scopes: `contacts.readonly`, `contacts.write`, `conversations.readonly`, `conversations.write`, `conversations/message.readonly`, `conversations/message.write`, `locations.readonly`, `oauth.readonly`, `oauth.write`
 - Redirect URL: `https://app-package-1.vercel.app/after-hours/oauth/callback`
 - Client Keys → **Add**: copy the **Client ID** and **Client Secret**.
 - SSO → **Shared Secret**: generate and copy it.
@@ -210,7 +210,7 @@ AFTER_HOURS_SSO_KEY=<Shared Secret>
 - Terms of service: `https://app-package-1.vercel.app/birthday-greeter/terms`
 
 **3. Advanced Settings → Auth**
-- Scopes: `contacts.readonly`, `contacts.write`, `conversations.readonly`, `conversations.write`, `conversations/message.readonly`, `conversations/message.write`, `locations.readonly`
+- Scopes: `contacts.readonly`, `contacts.write`, `conversations.readonly`, `conversations.write`, `conversations/message.readonly`, `conversations/message.write`, `locations.readonly`, `oauth.readonly`, `oauth.write`
 - Redirect URL: `https://app-package-1.vercel.app/birthday-greeter/oauth/callback`
 - Client Keys → **Add**: copy the **Client ID** and **Client Secret**.
 - SSO → **Shared Secret**: generate and copy it.
@@ -254,7 +254,7 @@ BIRTHDAY_GREETER_SSO_KEY=<Shared Secret>
 - Terms of service: `https://app-package-1.vercel.app/intent-radar/terms`
 
 **3. Advanced Settings → Auth**
-- Scopes: `contacts.readonly`, `contacts.write`, `conversations.readonly`, `conversations/message.readonly`, `locations.readonly`
+- Scopes: `contacts.readonly`, `contacts.write`, `conversations.readonly`, `conversations/message.readonly`, `locations.readonly`, `oauth.readonly`, `oauth.write`
 - Redirect URL: `https://app-package-1.vercel.app/intent-radar/oauth/callback`
 - Client Keys → **Add**: copy the **Client ID** and **Client Secret**.
 - SSO → **Shared Secret**: generate and copy it.
