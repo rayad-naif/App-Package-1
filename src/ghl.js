@@ -96,37 +96,76 @@ function createGhl(cfg, store, sec, fetchImpl) {
       } catch (e) { /* keep going: name is cosmetic */ }
     }
 
-    // Authorization code -> location install(s). Returns { installs, company }.
-    async function exchangeCode(code) {
-      const t = await tokenRequest({ grant_type: 'authorization_code', code, redirect_uri: redirectUri, user_type: 'Location' });
-      if (t.userType === 'Location' && t.locationId) return { installs: [await saveLocationToken(t, false)], company: null };
+    /* Authorization code -> install(s). Returns { installs, company, pending }.
+       - A sub-account install gives a Location token.
+       - An agency install ("install in all / selected sub-accounts") gives a
+         Company token (isBulkInstallation). We keep it and mint a Location
+         token for every sub-account that has the app, via /oauth/locationToken
+         (needs the oauth.readonly + oauth.write scopes). */
+    async function exchangeCode(code, deadline) {
+      let t;
+      try {
+        t = await tokenRequest({ grant_type: 'authorization_code', code, redirect_uri: redirectUri, user_type: 'Location' });
+      } catch (e) {
+        // Some agency installs only exchange as Company. If the code was already
+        // consumed this fails the same way and the first error is reported.
+        if (e.status !== 400 && e.status !== 401 && e.status !== 422) throw e;
+        try { t = await tokenRequest({ grant_type: 'authorization_code', code, redirect_uri: redirectUri, user_type: 'Company' }); } catch (e2) { throw e; }
+      }
+      if (t.userType === 'Location' && t.locationId) return { installs: [await saveLocationToken(t, false)], company: null, pending: 0 };
       if (t.userType === 'Company' && t.companyId) {
-        const company = { app: def.slug, companyId: t.companyId, tokens: sealTokens(t), expiresAt: expiresAt(t), updatedAt: new Date().toISOString() };
+        const company = { app: def.slug, companyId: t.companyId, installed: true, tokens: sealTokens(t), expiresAt: expiresAt(t), bulk: !!t.isBulkInstallation, updatedAt: new Date().toISOString() };
         await store.putCompany(company);
-        // Bulk install: mint a token for each sub-account that has the app.
-        const installs = [];
-        try {
-          const j = await call('GET', g.apiBase + '/oauth/installedLocations?' + new URLSearchParams({ companyId: t.companyId, appId, isInstalled: 'true', limit: '100' }),
-            { headers: { Authorization: 'Bearer ' + t.access_token } });
-          for (const l of (j.locations || []).slice(0, 25)) {
-            const id = l._id || l.id;
-            if (id) installs.push(await installFromCompany(t.companyId, id).catch(() => null));
-          }
-        } catch (e) { /* locations will be picked up from INSTALL webhooks */ }
-        return { installs: installs.filter(Boolean), company };
+        const r = await syncCompany(t.companyId, deadline || Date.now() + 25e3);
+        return { installs: r.installs, company, pending: r.pending };
       }
       throw new GhlError('Unexpected token type: ' + (t.userType || 'unknown'), 400, t);
     }
 
+    /* Mint tokens for every sub-account of the agency that has the app and
+       isn't set up yet, page by page, until the deadline. Sub-accounts left
+       over are set up on their first event, sign-in or the next sync. */
+    async function syncCompany(companyId, deadline) {
+      const installs = [];
+      let pending = 0, skip = 0;
+      const access = await companyAccess(companyId);
+      if (!access) return { installs, pending };
+      for (;;) {
+        const j = await call('GET', g.apiBase + '/oauth/installedLocations?' + new URLSearchParams({ companyId, appId, isInstalled: 'true', limit: '100', skip: String(skip) }),
+          { headers: { Authorization: 'Bearer ' + access } });
+        const list = (j.locations || []).filter((l) => l && (l._id || l.id) && l.isInstalled !== false);
+        for (const l of list) {
+          const id = l._id || l.id;
+          // Events usually carry only the locationId: remember which agency it belongs to.
+          await store.kvSet('loc2co:' + def.slug + ':' + id, companyId, 400 * 86400);
+          const have = await store.getInstall(def.slug, id);
+          if (have && have.installed && have.tokens) continue;
+          if (Date.now() > deadline) { pending++; continue; }
+          const inst = await installFromCompany(companyId, id).catch(() => null);
+          if (inst) installs.push(inst); else pending++;
+        }
+        skip += 100;
+        if ((j.locations || []).length < 100 || skip >= 10000) break;
+      }
+      return { installs, pending };
+    }
+
     async function companyAccess(companyId) {
       const c = await store.getCompany(def.slug, companyId);
-      const tk = c && openTokens(c.tokens);
+      const tk = c && c.installed !== false && openTokens(c.tokens);
       if (!tk) return null;
       if (Date.parse(c.expiresAt) - SKEW > Date.now()) return tk.a;
-      const t = await tokenRequest({ grant_type: 'refresh_token', refresh_token: tk.r, user_type: 'Company' });
-      c.tokens = sealTokens(t); c.expiresAt = expiresAt(t); c.updatedAt = new Date().toISOString();
-      await store.putCompany(c);
-      return t.access_token;
+      try {
+        const t = await tokenRequest({ grant_type: 'refresh_token', refresh_token: tk.r, user_type: 'Company' });
+        c.tokens = sealTokens(t); c.expiresAt = expiresAt(t); c.updatedAt = new Date().toISOString();
+        await store.putCompany(c);
+        return t.access_token;
+      } catch (e) {
+        // Refresh tokens rotate: another request may have refreshed it first.
+        const fresh = await store.getCompany(def.slug, companyId);
+        if (fresh && fresh.tokens !== c.tokens && Date.parse(fresh.expiresAt) - SKEW > Date.now()) return openTokens(fresh.tokens).a;
+        throw e;
+      }
     }
 
     async function installFromCompany(companyId, locationId) {
@@ -136,6 +175,24 @@ function createGhl(cfg, store, sec, fetchImpl) {
       t.locationId = t.locationId || locationId;
       t.companyId = t.companyId || companyId;
       return saveLocationToken(t, true);
+    }
+
+    // Is the agency's token still accepted? (Used for unsigned agency-wide UNINSTALL.)
+    async function companyStillInstalled(companyId) {
+      const c = await store.getCompany(def.slug, companyId);
+      const tk = c && c.installed !== false && openTokens(c.tokens);
+      if (!tk) return false;
+      try {
+        const t = await tokenRequest({ grant_type: 'refresh_token', refresh_token: tk.r, user_type: 'Company' });
+        c.tokens = sealTokens(t); c.expiresAt = expiresAt(t); c.updatedAt = new Date().toISOString();
+        await store.putCompany(c);
+        return true;
+      } catch (e) { return !(e.status === 400 || e.status === 401); }
+    }
+
+    async function markCompanyUninstalled(companyId) {
+      const c = await store.getCompany(def.slug, companyId);
+      if (c) { c.installed = false; c.tokens = null; c.uninstalledAt = new Date().toISOString(); await store.putCompany(c); }
     }
 
     async function accessToken(inst, force) {
@@ -193,7 +250,7 @@ function createGhl(cfg, store, sec, fetchImpl) {
       try { await accessToken(inst, true); return true; } catch (e) { return !(e.status === 400 || e.status === 401); }
     }
 
-    return { redirectUri, authorizeUrl, exchangeCode, installFromCompany, client, stillInstalled, blankInstall };
+    return { redirectUri, authorizeUrl, exchangeCode, syncCompany, installFromCompany, companyStillInstalled, markCompanyUninstalled, client, stillInstalled, blankInstall };
   }
 
   return { forApp, verifyWebhook, GhlError };

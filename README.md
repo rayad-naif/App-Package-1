@@ -58,6 +58,16 @@ The daily job (`/api/cron/daily`, birthdays) is scheduled in `vercel.json` at 15
 - **Function timeout**: 60 s (`vercel.json`). Webhooks finish in well under a second each.
 - **Commercial use**: Vercel's Hobby plan is for non-commercial use. Paid apps are commercial, so plan to move to Pro (or another host) once you have paying customers. Nothing in the code changes.
 
+## Agency installs
+
+Every app can be installed by a sub-account **or** by an agency into many sub-accounts at once (listing setting *Who can install: Agency & Sub-account*).
+
+- **Sub-account install**: the OAuth code is exchanged for a Location token.
+- **Agency install**: HighLevel returns an agency (Company) token. The app keeps it, lists the sub-accounts that have the app (`/oauth/installedLocations`) and mints a Location token for each (`/oauth/locationToken`). That needs the scopes `oauth.readonly` and `oauth.write`, which every app requests. Sub-accounts not reached within ~25 s of the install are set up automatically on their first event or when someone opens the app there.
+- **Added later**: an agency-level INSTALL webhook (e.g. "add to more sub-accounts" or new sub-accounts with auto-install) sets up the new ones; a location INSTALL webhook sets up that one.
+- **Agency uninstall**: an agency-wide UNINSTALL turns off the agency token and every sub-account it covered. Unsigned webhooks are only trusted after HighLevel refuses the stored token.
+- Refresh tokens rotate, so concurrent refreshes (agency or sub-account) re-read the stored token instead of failing.
+
 ## How it works
 
 - `src/suite.js`: one Express app; routes `/<slug>/...` to the right app definition. Webhooks are de-duplicated (HighLevel retries) and processed before replying (serverless functions freeze after the response).

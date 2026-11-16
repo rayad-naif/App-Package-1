@@ -85,15 +85,42 @@ function createSuite(cfg, deps) {
     };
   }
 
-  // The install for an event; mints a token from the agency token for bulk installs.
-  async function installFor(def, locationId, companyId) {
+  /* The install for a sub-account. A sub-account the agency installed in bulk
+     but that isn't set up yet gets its token minted from the agency token.
+     force: also re-mint one marked uninstalled (INSTALL webhook, sign-in). */
+  async function installFor(def, locationId, companyId, force) {
     let inst = await store.getInstall(def.slug, locationId);
     if (inst && inst.installed && inst.tokens) return inst;
-    if (companyId && await store.getCompany(def.slug, companyId)) {
-      inst = await def.oauth.installFromCompany(companyId, locationId).catch(() => null);
-      if (inst) await store.log(def.slug, locationId, 'installed', 'via bulk install');
+    if (inst && !inst.installed && !force) return null;
+    const map = 'loc2co:' + def.slug + ':' + locationId;
+    companyId = companyId || (inst && inst.companyId) || await store.kvGet(map);
+    if (!companyId || !(await store.getCompany(def.slug, companyId))) return null;
+    // Don't retry a failing mint on every event: at most every 10 minutes.
+    if (!force && await store.kvGet('nomint:' + def.slug + ':' + locationId)) return null;
+    const minted = await def.oauth.installFromCompany(companyId, locationId).catch(async (e) => {
+      await store.kvSet('nomint:' + def.slug + ':' + locationId, 1, 600);
+      await store.log(def.slug, locationId, 'mint_failed', e.message);
+      return null;
+    });
+    if (!minted) return null;
+    await store.kvSet(map, companyId, 400 * 86400);
+    await store.log(def.slug, locationId, 'installed', 'via agency install');
+    return minted;
+  }
+
+  // Agency-wide uninstall: the agency token and every sub-account it covered.
+  async function uninstallCompany(def, companyId, verified) {
+    const c = await store.getCompany(def.slug, companyId);
+    if (c && c.installed !== false && (verified === true || !(await def.oauth.companyStillInstalled(companyId)))) {
+      await def.oauth.markCompanyUninstalled(companyId);
+      await store.log(def.slug, null, 'uninstalled_agency', 'company ' + companyId);
     }
-    return inst && inst.installed ? inst : null;
+    for (const inst of (await store.listInstalls({ app: def.slug, installed: true })).filter((i) => i.companyId === companyId)) {
+      if (verified === true || !(await def.oauth.stillInstalled(inst))) {
+        await store.patchInstall(def.slug, inst.locationId, { installed: false, uninstalledAt: new Date().toISOString(), tokens: null });
+        await store.log(def.slug, inst.locationId, 'uninstalled', 'agency uninstall');
+      }
+    }
   }
 
   app.use(ah(async (req, res, next) => { if (req.path !== '/health') await ensureReady(); next(); }));
@@ -116,16 +143,25 @@ function createSuite(cfg, deps) {
     // Work happens before replying: serverless functions freeze after the response.
     try {
       if (evt.type === 'INSTALL') {
-        if (loc) await installFor(def, loc, company);
         await store.log(def.slug, loc, 'webhook_install', (evt.installType || '') + (company ? ' company ' + company : ''));
+        if (loc) {
+          if (company) await store.kvSet('loc2co:' + def.slug + ':' + loc, company, 400 * 86400);
+          await installFor(def, loc, company, true);
+        } else if (company && await store.getCompany(def.slug, company)) {
+          // Agency-level install (or "add to more sub-accounts"): set up every sub-account now.
+          const r = await def.oauth.syncCompany(company, Date.now() + 20e3);
+          await store.log(def.slug, null, 'agency_sync', 'company ' + company + ': ' + r.installs.length + ' set up' + (r.pending ? ', ' + r.pending + ' on first use' : ''));
+        }
       } else if (evt.type === 'UNINSTALL') {
-        const targets = loc ? [await store.getInstall(def.slug, loc)] : (await store.listInstalls({ app: def.slug, installed: true })).filter((i) => company && i.companyId === company && verified === true);
-        for (const inst of targets.filter(Boolean)) {
-          // An unsigned webhook is only trusted once HighLevel refuses the token.
-          if (verified === true || !(await def.oauth.stillInstalled(inst))) {
-            await store.patchInstall(def.slug, inst.locationId, { installed: false, uninstalledAt: new Date().toISOString(), tokens: null });
-            await store.log(def.slug, inst.locationId, 'uninstalled', 'webhook');
+        // An unsigned webhook is only trusted once HighLevel refuses the token.
+        if (loc) {
+          const inst = await store.getInstall(def.slug, loc);
+          if (inst && inst.installed && (verified === true || !(await def.oauth.stillInstalled(inst)))) {
+            await store.patchInstall(def.slug, loc, { installed: false, uninstalledAt: new Date().toISOString(), tokens: null });
+            await store.log(def.slug, loc, 'uninstalled', 'webhook');
           }
+        } else if (company) {
+          await uninstallCompany(def, company, verified);
         }
       } else if (loc) {
         const inst = await installFor(def, loc, company);
@@ -238,9 +274,9 @@ function createSuite(cfg, deps) {
       res.clearCookie('suite_state', { path: '/' });
     }
     try {
-      const r = await def.oauth.exchangeCode(code);
+      const r = await def.oauth.exchangeCode(code, Date.now() + 25e3);
       for (const i of r.installs) await store.log(def.slug, i.locationId, 'installed', i.name || '');
-      if (r.company) await store.log(def.slug, null, 'installed_agency', 'company ' + r.company.companyId + ', ' + r.installs.length + ' accounts');
+      if (r.company) await store.log(def.slug, null, 'installed_agency', 'company ' + r.company.companyId + ', ' + r.installs.length + ' accounts' + (r.pending ? ', ' + r.pending + ' on first use' : ''));
       html(res, views.installed(def, r));
     } catch (e) {
       console.error('[' + def.slug + '] oauth: ' + e.message);
@@ -261,7 +297,7 @@ function createSuite(cfg, deps) {
     if (!u) return res.status(401).json({ error: 'Your CRM did not send a valid sign-in. Reload the page.' });
     const loc = typeof u.activeLocation === 'string' ? u.activeLocation : '';
     if (!loc) return res.status(400).json({ error: 'Open this app from inside one of your accounts.' });
-    const inst = await installFor(def, loc, typeof u.companyId === 'string' ? u.companyId : null);
+    const inst = await installFor(def, loc, typeof u.companyId === 'string' ? u.companyId : null, true);
     if (!inst) return res.status(404).json({ error: def.name + ' is not installed in this account yet.', install: cfg.baseUrl + '/' + def.slug + '/install' });
     const edit = String(u.role || '').toLowerCase() === 'admin';
     res.json({ token: sec.sign({ t: 'emb', app: def.slug, loc, uid: String(u.userId || ''), edit, exp: Date.now() + EMBED_TTL }), edit });

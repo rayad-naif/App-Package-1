@@ -392,3 +392,181 @@ test('Intent Radar: tags, note and owner task once per cooldown', async () => {
     assert.strictEqual(t.g.calls.length, before);
   } finally { t.close(); }
 });
+
+/* ---------- Agency (bulk) installs ---------- */
+function agencyFake(opts) {
+  opts = opts || {};
+  const st = { locs: opts.locs || [], valid: new Set(), n: 0, minted: [], tokenCalls: [], gone: new Set(), companyRefreshFails: false, uninstalled: false };
+  const issue = (extra) => { st.n++; const rt = 'crt' + st.n; st.valid.add(rt); return Object.assign({ access_token: 'cat' + st.n, refresh_token: rt, expires_in: 86399 }, extra); };
+  const routes = {
+    'POST /oauth/token': (b) => {
+      const gt = b.get('grant_type'), ut = b.get('user_type');
+      st.tokenCalls.push(gt + ':' + ut);
+      if (gt === 'authorization_code') {
+        if (opts.strict && ut === 'Location') return [400, { error: 'invalid_request', error_description: 'user_type mismatch' }];
+        return [200, issue({ userType: 'Company', companyId: COMPANY, isBulkInstallation: true })];
+      }
+      if (st.uninstalled) return [401, { error: 'invalid_grant' }];
+      if (ut === 'Company') {
+        const rt = b.get('refresh_token');
+        if (st.companyRefreshFails || !st.valid.has(rt)) return [401, { error: 'invalid_grant' }];
+        st.valid.delete(rt); // refresh tokens rotate
+        return [200, issue({ userType: 'Company', companyId: COMPANY })];
+      }
+      return [200, issue({ userType: 'Location' })];
+    },
+    'GET /oauth/installedLocations': (b, id, u) => {
+      const skip = Number(u.searchParams.get('skip')) || 0, lim = Number(u.searchParams.get('limit'));
+      return [200, { locations: st.locs.slice(skip, skip + lim).map((x) => ({ _id: x, name: 'Loc ' + x, isInstalled: true })), count: st.locs.length }];
+    },
+    'POST /oauth/locationToken': (b) => {
+      const l = b.get('locationId');
+      if (st.uninstalled || st.gone.has(l)) return [400, { message: 'App is not installed in this location' }];
+      st.minted.push(l);
+      return [200, Object.assign(issue({ userType: 'Location' }), { locationId: l, companyId: b.get('companyId') })];
+    }
+  };
+  return { st, routes };
+}
+const expireCompany = async (t, slug) => { const c = await t.store.getCompany(slug, COMPANY); c.expiresAt = new Date(Date.now() - 1000).toISOString(); await t.store.putCompany(c); };
+
+test('every app requests the scopes an agency install needs', () => {
+  const t = setup();
+  try {
+    for (const a of t.app.locals.apps) {
+      assert.ok(a.scopes.includes('oauth.readonly') && a.scopes.includes('oauth.write'), a.slug);
+      assert.match(a.oauth.authorizeUrl('s'), /scope=[^&]*oauth\.write/);
+    }
+  } finally { t.close(); }
+});
+
+test('agency install: every sub-account gets its own token, across pages', async () => {
+  const locs = Array.from({ length: 130 }, (x, i) => 'L' + i);
+  const f = agencyFake({ locs });
+  const t = setup({}, f.routes);
+  try {
+    const r = await t.install('lead-scorer');
+    assert.strictEqual(r.status, 200);
+    assert.match(r.text, /Active in:/);
+    assert.match(r.text, /and 80 more/);
+    assert.strictEqual(f.st.minted.length, 130);
+    assert.deepStrictEqual(t.g.find('GET', /installedLocations/).map((c) => c.query.skip), ['0', '100']);
+    // Every location token was minted with the agency token from the install.
+    assert.ok(t.g.find('POST', /locationToken/).every((c) => c.auth === 'Bearer cat1'));
+    const inst = await t.store.getInstall('lead-scorer', 'L42');
+    assert.strictEqual(inst.installed, true);
+    assert.strictEqual(inst.viaCompany, true);
+    assert.strictEqual(inst.companyId, COMPANY);
+    // Events for an agency-installed sub-account work.
+    await t.hook('lead-scorer', { type: 'ContactCreate', id: 'c1', locationId: 'L42' });
+    assert.strictEqual(await t.store.kvGet('lead-scorer:L42:score:c1'), 5);
+  } finally { t.close(); }
+});
+
+test('agency install: code that only exchanges as Company still installs', async () => {
+  const f = agencyFake({ locs: ['L1'], strict: true });
+  const t = setup({}, f.routes);
+  try {
+    const r = await t.install('round-robin');
+    assert.strictEqual(r.status, 200);
+    assert.deepStrictEqual(f.st.tokenCalls.slice(0, 2), ['authorization_code:Location', 'authorization_code:Company']);
+    assert.strictEqual((await t.store.getInstall('round-robin', 'L1')).installed, true);
+  } finally { t.close(); }
+});
+
+test('agency install: sub-accounts not reached in time are set up by their first event (no companyId in it)', async () => {
+  const f = agencyFake({ locs: ['L1'] });
+  const t = setup({}, f.routes);
+  try {
+    await t.install('lead-scorer');
+    f.st.locs.push('L2', 'L3');
+    const def = t.app.locals.apps.find((a) => a.slug === 'lead-scorer');
+    const r = await def.oauth.syncCompany(COMPANY, 0); // deadline already passed
+    assert.strictEqual(r.pending, 2);
+    assert.strictEqual(await t.store.getInstall('lead-scorer', 'L2'), null);
+    await t.hook('lead-scorer', { type: 'ContactCreate', id: 'c9', locationId: 'L2' }); // webhook has no companyId
+    assert.strictEqual(await t.store.kvGet('lead-scorer:L2:score:c9'), 5);
+    assert.ok(f.st.minted.includes('L2'));
+  } finally { t.close(); }
+});
+
+test('agency-level INSTALL webhook sets up new sub-accounts; location INSTALL sets up one', async () => {
+  const f = agencyFake({ locs: ['L1'] });
+  const t = setup({}, f.routes);
+  try {
+    await t.install('after-hours');
+    f.st.locs.push('L2', 'L3');
+    await t.hook('after-hours', { type: 'INSTALL', installType: 'Company', companyId: COMPANY, locationId: undefined });
+    assert.deepStrictEqual(f.st.minted.sort(), ['L1', 'L2', 'L3']);
+    await t.hook('after-hours', { type: 'INSTALL', installType: 'Location', companyId: COMPANY, locationId: 'L7' });
+    assert.ok(f.st.minted.includes('L7'));
+    assert.strictEqual((await t.store.getInstall('after-hours', 'L7')).installed, true);
+  } finally { t.close(); }
+});
+
+test('agency UNINSTALL: unsigned is checked with HighLevel; then nothing is minted again', async () => {
+  const f = agencyFake({ locs: ['L1', 'L2'] });
+  const t = setup({}, f.routes);
+  try {
+    await t.install('contact-cleaner');
+    const uninstall = { type: 'UNINSTALL', companyId: COMPANY, locationId: undefined };
+    await t.hook('contact-cleaner', uninstall); // HighLevel still accepts the tokens
+    assert.strictEqual((await t.store.getInstall('contact-cleaner', 'L1')).installed, true);
+    f.st.uninstalled = true;
+    await t.hook('contact-cleaner', uninstall);
+    assert.strictEqual((await t.store.getInstall('contact-cleaner', 'L1')).installed, false);
+    assert.strictEqual((await t.store.getInstall('contact-cleaner', 'L2')).installed, false);
+    assert.strictEqual((await t.store.getCompany('contact-cleaner', COMPANY)).installed, false);
+    const minted = f.st.minted.length, calls = t.g.calls.length;
+    await t.hook('contact-cleaner', { type: 'ContactCreate', id: 'c1', locationId: 'L1', firstName: 'ann' });
+    assert.strictEqual(f.st.minted.length, minted);
+    assert.strictEqual(t.g.calls.length, calls, 'no API calls for an uninstalled sub-account');
+  } finally { t.close(); }
+});
+
+test('signed agency UNINSTALL is trusted without a check', async () => {
+  const { publicKey, privateKey } = crypto.generateKeyPairSync('ed25519');
+  const f = agencyFake({ locs: ['L1'] });
+  const t = setup({ GHL_WEBHOOK_ED25519_KEY: publicKey.export({ type: 'spki', format: 'pem' }) }, f.routes);
+  try {
+    await t.install('birthday-greeter');
+    const body = JSON.stringify({ type: 'UNINSTALL', companyId: COMPANY });
+    const sig = crypto.sign(null, Buffer.from(body), privateKey).toString('base64');
+    const before = f.st.tokenCalls.length;
+    assert.strictEqual((await t.req('POST', '/birthday-greeter/webhook', body, { 'x-ghl-signature': sig })).status, 200);
+    assert.strictEqual(f.st.tokenCalls.length, before, 'no token check needed');
+    assert.strictEqual((await t.store.getInstall('birthday-greeter', 'L1')).installed, false);
+  } finally { t.close(); }
+});
+
+test('agency token refreshed by two requests at once: both still work', async () => {
+  const f = agencyFake({ locs: ['L1'] });
+  const t = setup({}, f.routes);
+  try {
+    await t.install('intent-radar');
+    f.st.locs.push('LA', 'LB');
+    const def = t.app.locals.apps.find((a) => a.slug === 'intent-radar');
+    await def.oauth.syncCompany(COMPANY, 0); // remember LA, LB without minting
+    await expireCompany(t, 'intent-radar');
+    // Both start before either refresh finishes, so they refresh with the same (rotating) token.
+    const both = await Promise.all(['LA', 'LB'].map((l) => def.oauth.installFromCompany(COMPANY, l)));
+    assert.deepStrictEqual(both.map((i) => i && i.locationId), ['LA', 'LB']);
+    assert.strictEqual(f.st.tokenCalls.filter((c) => c === 'refresh_token:Company').length, 2, 'both refreshed: the race happened');
+    // And events for them work afterwards.
+    await t.hook('intent-radar', { type: 'InboundMessage', contactId: 'c1', locationId: 'LB', messageType: 'SMS', direction: 'inbound', body: 'how much is it?' });
+    assert.ok(t.g.find('POST', /c1\/tags/).some((c) => c.body.tags.includes('intent-pricing')));
+  } finally { t.close(); }
+});
+
+test('SSO inside an agency-installed sub-account that was not set up yet', async () => {
+  const f = agencyFake({ locs: [] });
+  const t = setup({}, f.routes);
+  try {
+    await t.install('round-robin');
+    const payload = encryptGhlSso({ userId: 'u1', companyId: COMPANY, role: 'admin', type: 'agency', activeLocation: 'LZ' }, 'sso-ROUND_ROBIN');
+    const r = await t.req('POST', '/round-robin/api/sso', { payload });
+    assert.strictEqual(r.status, 200);
+    assert.ok(r.json.token && r.json.edit);
+    assert.ok(f.st.minted.includes('LZ'));
+  } finally { t.close(); }
+});
