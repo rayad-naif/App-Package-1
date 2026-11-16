@@ -42,7 +42,7 @@ For each app in the HighLevel developer portal (marketplace.gohighlevel.com):
 
 ## Deploy on Vercel (free)
 
-1. **Import**: [vercel.com/new](https://vercel.com/new) → import `rayad-naif/App-Package-1` → Framework Preset *Other* → add two environment variables: `ADMIN_PASSWORD` (10+ characters, for `/admin`) and `CRON_SECRET` (any long random text) → **Deploy**. The first deploy shows "not configured yet" until step 2.
+1. **Import**: [vercel.com/new](https://vercel.com/new) → import `rayad-naif/App-Package-1` → Framework Preset *Other* (`vercel.json` also forces this; if Vercel suggests *Express*, either works) → add two environment variables: `ADMIN_PASSWORD` (10+ characters, for `/admin`) and `CRON_SECRET` (any long random text) → **Deploy**. The first deploy shows "not configured yet" until step 2.
 2. **Database (Vercel's own, free)**: in the project, *Storage* → *Create Database* → **Upstash for Redis** (Free plan) → *Connect* to the project (all environments). Vercel adds `KV_REST_API_URL` and `KV_REST_API_TOKEN` automatically. Then *Deployments* → ⋯ → **Redeploy**.
 3. Open `https://<project>.vercel.app/health`: it should say `"database": "ok (redis)"`. Optional: add your own domain in *Settings → Domains* and set `BASE_URL` to it (then redeploy).
 4. Open `/admin` (your `ADMIN_PASSWORD`) for the exact values to paste into each HighLevel listing.
