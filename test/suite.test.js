@@ -111,6 +111,13 @@ test('public pages render for every app', async () => {
       assert.match(i.headers.get('location'), /chooselocation.*client_id=app/);
     }
     assert.strictEqual((await t.req('GET', '/nope')).status, 404);
+    // Hardcoded brand: Ironix by IR. Solutions, support idylle_radieuse@outlook.com.
+    const home = await t.req('GET', '/');
+    assert.match(home.text, /<b>Ironix<\/b> by IR\. Solutions/);
+    const sup = await t.req('GET', '/lead-scorer/support');
+    assert.match(sup.text, /idylle_radieuse@outlook\.com/);
+    assert.match(sup.text, /Lead Scorer<\/b> by Ironix/);
+    assert.match((await t.req('GET', '/lead-scorer/privacy')).text, /provided by IR\. Solutions/);
     // White-label: no CRM brand or plan names on anything customers see.
     const visible = (h) => h.replace(/<style[\s\S]*?<\/style>/g, '').replace(/<[^>]+>/g, ' ');
     const pages = ['/', '/privacy', '/terms'];

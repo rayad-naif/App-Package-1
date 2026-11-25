@@ -2,6 +2,7 @@
 /* Writes SETUP-HIGHLEVEL.md: click-by-click values for every Marketplace listing.
    Usage: node scripts/listing-guide.js https://your-domain [> SETUP-HIGHLEVEL.md] */
 const apps = require('../src/apps');
+const brand = require('../src/config').load({}).brand;
 const base = (process.argv[2] || 'https://app-package-1.vercel.app').replace(/\/+$/, '');
 const out = [];
 const w = (s) => out.push(s == null ? '' : s);
@@ -34,6 +35,8 @@ for (const a of apps) {
   w('- Description: ' + a.description);
   w('- Key features:');
   a.features.forEach((f) => w('  - **' + f[0] + '**: ' + f[1]));
+  w('- Company / developer: `' + brand.legalName + '` (brand: ' + brand.name + ')');
+  w('- Support email: `' + brand.supportEmail + '`');
   w('- Website: `' + u + '`');
   w('- Documentation: `' + u + '/docs`');
   w('- Support: `' + u + '/support`');

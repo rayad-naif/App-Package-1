@@ -78,7 +78,7 @@ function createViews(cfg, apps) {
       ? ['', '/docs', '/support'].map((x, i) => '<a href="/' + o.def.slug + x + '">' + ['Home', 'Docs', 'Support'][i] + '</a>').join('')
       : '<a href="/">Apps</a><a href="/privacy">Privacy</a><a href="/terms">Terms</a><a href="mailto:' + esc(brand.supportEmail) + '">Support</a>') + '</nav>';
     const p = o.def ? '/' + o.def.slug : '';
-    const foot = o.bare ? '' : '<footer><div class="in"><div><b>' + esc(o.def ? o.def.name : brand.name) + '</b>' + (o.def ? ' by ' + esc(brand.name) : ' &middot; Apps for your CRM') +
+    const foot = o.bare ? '' : '<footer><div class="in"><div><b>' + esc(o.def ? o.def.name : brand.name) + '</b>' + (o.def ? ' by ' + esc(brand.name) : ' by ' + esc(brand.legalName)) +
       '<br>Support: <a href="mailto:' + esc(brand.supportEmail) + '">' + esc(brand.supportEmail) + '</a></div>' +
       '<div>' + (o.def ? '<a href="' + p + '">Home</a><a href="' + p + '/docs">Docs</a><a href="' + p + '/support">Support</a>' : '<a href="/">All apps</a>') +
       '<a href="' + p + '/privacy">Privacy Policy</a><a href="' + p + '/terms">Terms of Service</a></div></div></footer>';
