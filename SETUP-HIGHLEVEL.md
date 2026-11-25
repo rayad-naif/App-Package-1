@@ -27,6 +27,8 @@ Do this once per app at **marketplace.gohighlevel.com** (developer portal) → *
   - **Cold / warm / hot tags**: Tags switch automatically as the score crosses your thresholds. Trigger any workflow from them.
   - **Your own point rules**: Choose how many points each action is worth and cap message points per day.
   - **Zero setup**: Install, open the app, and scoring starts with sensible defaults.
+- Company / developer: `IR. Solutions` (brand: Ironix)
+- Support email: `idylle_radieuse@outlook.com`
 - Website: `https://app-package-1.vercel.app/lead-scorer`
 - Documentation: `https://app-package-1.vercel.app/lead-scorer/docs`
 - Support: `https://app-package-1.vercel.app/lead-scorer/support`
@@ -71,6 +73,8 @@ LEAD_SCORER_SSO_KEY=<Shared Secret>
   - **Contacts and opportunities**: Assign either or both. Opportunities follow the contact’s owner so a lead keeps one rep.
   - **Tag filter**: Only rotate leads with a tag (e.g. from one funnel) and leave the rest alone.
   - **Pause in one click**: Set someone to 0 while they are away. No workflow edits.
+- Company / developer: `IR. Solutions` (brand: Ironix)
+- Support email: `idylle_radieuse@outlook.com`
 - Website: `https://app-package-1.vercel.app/round-robin`
 - Documentation: `https://app-package-1.vercel.app/round-robin/docs`
 - Support: `https://app-package-1.vercel.app/round-robin/support`
@@ -115,6 +119,8 @@ ROUND_ROBIN_SSO_KEY=<Shared Secret>
   - **Phones that text**: Local numbers become +E.164 using your default country, so SMS sends and duplicates match.
   - **Duplicate alerts**: New contacts sharing an email or phone with an existing one are tagged with a note linking the original.
   - **Junk filter**: Test names, throwaway email domains and fake phone numbers are tagged for review.
+- Company / developer: `IR. Solutions` (brand: Ironix)
+- Support email: `idylle_radieuse@outlook.com`
 - Website: `https://app-package-1.vercel.app/contact-cleaner`
 - Documentation: `https://app-package-1.vercel.app/contact-cleaner/docs`
 - Support: `https://app-package-1.vercel.app/contact-cleaner/support`
@@ -159,6 +165,8 @@ CONTACT_CLEANER_SSO_KEY=<Shared Secret>
   - **Knows when you open**: {{next_open}} becomes "tomorrow at 9 AM" or "on Monday at 10 AM" from your hours and holidays.
   - **Polite by design**: One reply per contact per cooldown, skips DND and contacts with your opt-out tag.
   - **Call-back list**: Tags everyone who wrote after hours so your team starts the day with them.
+- Company / developer: `IR. Solutions` (brand: Ironix)
+- Support email: `idylle_radieuse@outlook.com`
 - Website: `https://app-package-1.vercel.app/after-hours`
 - Documentation: `https://app-package-1.vercel.app/after-hours/docs`
 - Support: `https://app-package-1.vercel.app/after-hours/support`
@@ -203,6 +211,8 @@ AFTER_HOURS_SSO_KEY=<Shared Secret>
   - **SMS, email or both**: Personal merge fields: first name, business name, even their new age.
   - **Workflow-ready tag**: "birthday-today" is added on the day and removed the next, so any workflow can react.
   - **One-click import**: Index the birthdays of the contacts you already have; new and edited contacts are tracked live.
+- Company / developer: `IR. Solutions` (brand: Ironix)
+- Support email: `idylle_radieuse@outlook.com`
 - Website: `https://app-package-1.vercel.app/birthday-greeter`
 - Documentation: `https://app-package-1.vercel.app/birthday-greeter/docs`
 - Support: `https://app-package-1.vercel.app/birthday-greeter/support`
@@ -247,6 +257,8 @@ BIRTHDAY_GREETER_SSO_KEY=<Shared Secret>
   - **Save customers before they leave**: Complaints and cancellation talk are flagged with the exact quote, so you can call before it is too late.
   - **Respect opt-outs**: "Stop texting me" is tagged intent-opt-out and never triggers sales follow-up.
   - **Your words, too**: Add competitor names and your own phrases for any intent. No AI key, no per-message fees, and every match is explained.
+- Company / developer: `IR. Solutions` (brand: Ironix)
+- Support email: `idylle_radieuse@outlook.com`
 - Website: `https://app-package-1.vercel.app/intent-radar`
 - Documentation: `https://app-package-1.vercel.app/intent-radar/docs`
 - Support: `https://app-package-1.vercel.app/intent-radar/support`

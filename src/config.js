@@ -52,10 +52,11 @@ function load(envIn) {
       webhookRsaKey: env.GHL_WEBHOOK_RSA_KEY || ''
     },
     brand: {
-      name: env.BRAND_NAME || 'Growth Apps',
-      supportEmail: env.SUPPORT_EMAIL || 'support@example.com',
-      legalName: env.LEGAL_NAME || env.BRAND_NAME || 'Growth Apps',
-      legalUpdated: env.LEGAL_UPDATED || 'November 9, 2026'
+      // Hardcoded brand for this app package.
+      name: 'Ironix',
+      legalName: 'IR. Solutions',
+      supportEmail: 'idylle_radieuse@outlook.com',
+      legalUpdated: 'November 25, 2026'
     }
   };
 }
