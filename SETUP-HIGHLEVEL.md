@@ -2,7 +2,7 @@
 
 Values below use `https://app-package-1.vercel.app`. If your Vercel domain is different, open `/admin` on your deployment: it shows the same values with your real domain (or run `node scripts/listing-guide.js https://your-domain > SETUP-HIGHLEVEL.md`).
 
-Do this once per app at **marketplace.gohighlevel.com** (developer portal) → **My Apps** → **Create App**. After each app, paste its three keys into Vercel (step 5) and redeploy.
+Do this once per app at **marketplace.leadconnectorhq.com** (developer portal) → **My Apps** → **Create App**. After each app, paste its three keys into Vercel (step 5) and redeploy.
 
 | Profile | Apps |
 | --- | --- |

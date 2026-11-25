@@ -108,7 +108,7 @@ test('public pages render for every app', async () => {
 
       const i = await t.req('GET', '/' + a.slug + '/install');
       assert.strictEqual(i.status, 302);
-      assert.match(i.headers.get('location'), /chooselocation.*client_id=app/);
+      assert.match(i.headers.get('location'), /^https:\/\/marketplace\.leadconnectorhq\.com\/oauth\/chooselocation\?.*client_id=app/);
     }
     assert.strictEqual((await t.req('GET', '/nope')).status, 404);
     // Hardcoded brand: Ironix by IR. Solutions, support idylle_radieuse@outlook.com.
@@ -126,6 +126,11 @@ test('public pages render for every app', async () => {
       const text = visible((await t.req('GET', p)).text);
       assert.doesNotMatch(text, /high ?level|\bghl\b|leadconnector|sub-?account|agenc(y|ies)/i, p + ' mentions a brand or plan name');
       assert.doesNotMatch(text, /\$\s?\d|per month|\/\s?month|billing|fees you paid/i, p + ' shows pricing');
+    }
+    // White-label: no gohighlevel links and no personal address anywhere in the HTML (links, scripts, meta).
+    for (const p of pages.concat(['/admin/login'])) {
+      const raw = (await t.req('GET', p)).text;
+      assert.doesNotMatch(raw, /gohighlevel|malikrayad110/i, p + ' leaks a gohighlevel link or a personal address');
     }
     const h = await t.req('GET', '/health');
     assert.strictEqual(h.json.apps['after-hours'].configured, true);

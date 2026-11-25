@@ -44,7 +44,7 @@ function load(envIn) {
     cronSecret: env.CRON_SECRET || '',
     creds: (prefix) => appCreds(env, prefix),
     ghl: {
-      authUrl: env.GHL_AUTH_URL || 'https://marketplace.gohighlevel.com/oauth/chooselocation',
+      authUrl: env.GHL_AUTH_URL || 'https://marketplace.leadconnectorhq.com/oauth/chooselocation',
       apiBase: (env.GHL_API_BASE || 'https://services.leadconnectorhq.com').replace(/\/+$/, ''),
       apiVersion: env.GHL_API_VERSION || '2021-07-28',
       // HighLevel signs every app's webhooks with the same marketplace keys.

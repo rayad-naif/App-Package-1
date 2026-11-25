@@ -32,7 +32,7 @@ Per app (replace `<slug>`):
 
 Step-by-step, click by click: [`SETUP-HIGHLEVEL.md`](SETUP-HIGHLEVEL.md). Summary:
 
-For each app in the HighLevel developer portal (marketplace.gohighlevel.com):
+For each app in the HighLevel developer portal (marketplace.leadconnectorhq.com):
 
 1. **Create app**: Target User *Sub-account*, distribution *Agency and Sub-account* (bulk agency installs are supported).
 2. **Auth**: add the Redirect URL and the scopes. `/admin` lists every value for each app, filled in with your domain. Create a client ID/secret and the SSO **Shared Secret**.
